@@ -29,19 +29,11 @@ architecture behavioral of project_reti_logiche is
     STATE_WAIT_START_LOW,
     STATE_WAIT_WORD_READ,
     STATE_ZERO_WORD_CHECK_AND_WRITE,
-    STATE_WAIT_WRITE_MAX_CRED,
-    STATE_WAIT_OVERWRITE_ZERO_WORD,
-    STATE_WRITE_DECREMENTED_CRED,
-    STATE_WAIT_WRITE_DECREMENTED_CRED
+    STATE_WRITE_DECREMENTED_CRED
   );
 
   signal next_state    : state_t;
   signal current_state : state_t;
-
-  -- Temp signals to prevent latches
-  signal o_done_temp   : std_logic;
-  signal temp_o_mem_en : std_logic;
-  signal temp_o_mem_we : std_logic;
 
   signal current_address : std_logic_vector(15 downto 0);
   signal end_address     : std_logic_vector(15 downto 0);
@@ -60,6 +52,7 @@ begin
     if i_rst = '1' then
       -- Go to the first state
       current_state <= STATE_IDLE;
+
     elsif rising_edge(i_clk) then
       -- Update state
       current_state <= next_state;
@@ -152,14 +145,14 @@ begin
 
         if i_mem_data /= zero_word then
           -- If the read word is non zero, write max credibility to memory
-          current_address <= std_logic_vector(unsigned(current_address) + 1);
+          current_address <= std_logic_vector(unsigned(current_address) + 2);
           o_mem_addr      <= std_logic_vector(unsigned(current_address) + 1);
           o_mem_data      <= max_credibility;
 
           -- and  save the current word as the last non-zero word
           last_word <= i_mem_data;
 
-          next_state <= STATE_WAIT_WRITE_MAX_CRED;
+          next_state <= STATE_ACTIVE;
 
         else
           -- Otherwise overwrite it with the last non-zero word read
@@ -174,39 +167,11 @@ begin
             last_credibility <= zero_credibility;
           end if;
 
-          next_state <= STATE_WAIT_OVERWRITE_ZERO_WORD;
+          current_address <= std_logic_vector(unsigned(current_address) + 1);
+
+          next_state <= STATE_WRITE_DECREMENTED_CRED;
 
         end if;
-
-      when STATE_WAIT_WRITE_MAX_CRED =>
-        -- Wait for the memory to complete the write
-
-        o_done <= '0';
-
-        -- Update the memory address to point to next word
-        current_address <= std_logic_vector(unsigned(current_address) + 1);
-
-        -- Disable memory access
-        o_mem_en   <= '0';
-        o_mem_we   <= '0';
-        o_mem_addr <= (others => '-');
-        o_mem_data <= (others => '-');
-        next_state <= STATE_ACTIVE;
-
-      when STATE_WAIT_OVERWRITE_ZERO_WORD =>
-        -- Wait for the memory to complete the write
-
-        o_done <= '0';
-
-        -- Update the memory address to point to the credibility
-        current_address <= std_logic_vector(unsigned(current_address) + 1);
-
-        -- Disable memory access
-        o_mem_en   <= '0';
-        o_mem_we   <= '0';
-        o_mem_addr <= (others => '-');
-        o_mem_data <= (others => '-');
-        next_state <= STATE_WRITE_DECREMENTED_CRED;
 
       when STATE_WRITE_DECREMENTED_CRED =>
         o_done <= '0';
@@ -217,21 +182,8 @@ begin
         o_mem_data <= last_credibility;
         o_mem_addr <= current_address;
 
-        next_state <= STATE_WAIT_WRITE_DECREMENTED_CRED;
-
-      when STATE_WAIT_WRITE_DECREMENTED_CRED =>
-        -- Wait for the write to be completed
-
-        o_done <= '0';
-
         -- Update the current address to point to next word
         current_address <= std_logic_vector(unsigned(current_address) + 1);
-
-        -- Disable memory access
-        o_mem_en   <= '0';
-        o_mem_we   <= '0';
-        o_mem_addr <= (others => '-');
-        o_mem_data <= (others => '-');
 
         next_state <= STATE_ACTIVE;
     end case;
