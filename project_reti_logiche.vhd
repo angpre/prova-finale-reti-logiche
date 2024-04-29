@@ -151,6 +151,7 @@ begin
 
           -- and  save the current word as the last non-zero word
           last_word <= i_mem_data;
+          last_credibility <= max_credibility;
 
           next_state <= STATE_ACTIVE;
 
