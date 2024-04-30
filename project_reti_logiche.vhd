@@ -73,15 +73,16 @@ begin
         o_mem_addr <= (others => '-');
         o_mem_data <= (others => '-');
 
+        -- Set signals
+        current_address  <= i_add;
+        end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k));
+        last_credibility <= zero_credibility;
+        last_word        <= zero_word;
+
         if i_start = '1' then
-          -- Set signals
-          current_address  <= i_add;
-          end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k));
-          last_credibility <= zero_credibility;
-          last_word        <= zero_word;
-
           next_state <= STATE_ACTIVE;
-
+        else
+          next_state <= STATE_IDLE;
         end if;
 
       when STATE_ACTIVE =>
@@ -129,9 +130,9 @@ begin
 
         o_done <= '0';
 
-        o_mem_en   <= '0';
+        o_mem_en   <= '1';
         o_mem_we   <= '0';
-        o_mem_addr <= (others => '-');
+        o_mem_addr <= current_address;
         o_mem_data <= (others => '-');
 
         next_state <= STATE_ZERO_WORD_CHECK_AND_WRITE;
@@ -150,7 +151,7 @@ begin
           o_mem_data      <= max_credibility;
 
           -- and  save the current word as the last non-zero word
-          last_word <= i_mem_data;
+          last_word        <= i_mem_data;
           last_credibility <= max_credibility;
 
           next_state <= STATE_ACTIVE;
