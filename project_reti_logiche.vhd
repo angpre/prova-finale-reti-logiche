@@ -75,7 +75,7 @@ begin
 
         -- Set signals
         current_address  <= i_add;
-        end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k));
+        end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k) + unsigned(i_k));
         last_credibility <= zero_credibility;
         last_word        <= zero_word;
 
