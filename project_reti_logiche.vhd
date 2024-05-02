@@ -59,7 +59,7 @@ begin
       -- Go to the first state
       current_state <= STATE_IDLE;
 
-      -- Reset all other signals
+      -- Init all other signals
       current_address  <= (others => '-');
       last_credibility <= (others => '-');
       last_word        <= (others => '-');
@@ -81,27 +81,31 @@ begin
   -- This process selects next state and handles the logic
   lambda : process (current_state, i_start)
   begin
+    -- Default next signals assignments
     current_address_next  <= current_address;
     last_credibility_next <= last_credibility;
     last_word_next        <= last_word;
     end_address_next      <= end_address;
 
+    -- Default memory assignments
+    o_mem_en   <= '0';
+    o_mem_we   <= '0';
+    o_mem_addr <= (others => '-');
+    o_mem_data <= (others => '-');
+
+    -- Default done assignment
+    o_done <= '0';
+
     case current_state is
       when STATE_IDLE =>
-        o_done <= '0';
-
         -- Keep memory disabled
-        o_mem_en   <= '0';
-        o_mem_we   <= '0';
-        o_mem_addr <= (others => '-');
-        o_mem_data <= (others => '-');
 
         if i_start = '1' then
           next_state <= STATE_ACTIVE;
 
           -- Set signals
           current_address_next  <= i_add;
-          end_address_next           <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
+          end_address_next      <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
           last_credibility_next <= zero_credibility;
           last_word_next        <= zero_word;
         else
@@ -113,22 +117,12 @@ begin
           -- Computation has ended
           o_done <= '1';
 
-          -- Disable memory
-          o_mem_en   <= '0';
-          o_mem_we   <= '0';
-          o_mem_addr <= (others => '-');
-          o_mem_data <= (others => '-');
-
           next_state <= STATE_WAIT_START_LOW;
 
         else
-          o_done <= '0';
-
           -- Enable reading from memory
           o_mem_en   <= '1';
-          o_mem_we   <= '0';
           o_mem_addr <= current_address;
-          o_mem_data <= (others => '-');
 
           next_state <= STATE_WAIT_WORD_READ;
 
@@ -136,12 +130,6 @@ begin
 
       when STATE_WAIT_START_LOW =>
         o_done <= '1';
-
-        -- Disable memory access
-        o_mem_en   <= '0';
-        o_mem_we   <= '0';
-        o_mem_addr <= (others => '-');
-        o_mem_data <= (others => '-');
 
         if i_start = '0' then
           -- When i_start is low, transition to idle where o_done will be '0'
@@ -151,18 +139,9 @@ begin
       when STATE_WAIT_WORD_READ =>
         -- This state is for waiting for o_mem_data to be available
 
-        o_done <= '0';
-
-        o_mem_en   <= '0';
-        o_mem_we   <= '0';
-        o_mem_addr <= (others => '-');
-        o_mem_data <= (others => '-');
-
         next_state <= STATE_ZERO_WORD_CHECK_AND_WRITE;
 
       when STATE_ZERO_WORD_CHECK_AND_WRITE =>
-        o_done <= '0';
-
         -- Enable writing to memory
         o_mem_en <= '1';
         o_mem_we <= '1';
@@ -199,8 +178,6 @@ begin
         end if;
 
       when STATE_WRITE_DECREMENTED_CRED =>
-        o_done <= '0';
-
         -- Prepare the memory for writing
         o_mem_en   <= '1';
         o_mem_we   <= '1';
