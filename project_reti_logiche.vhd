@@ -130,9 +130,9 @@ begin
 
         o_done <= '0';
 
-        o_mem_en   <= '1';
+        o_mem_en   <= '0';
         o_mem_we   <= '0';
-        o_mem_addr <= current_address;
+        o_mem_addr <= (others => '-');
         o_mem_data <= (others => '-');
 
         next_state <= STATE_ZERO_WORD_CHECK_AND_WRITE;
