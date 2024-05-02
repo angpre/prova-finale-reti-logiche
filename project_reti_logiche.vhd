@@ -35,13 +35,19 @@ architecture behavioral of project_reti_logiche is
   signal next_state    : state_t;
   signal current_state : state_t;
 
-  signal current_address : std_logic_vector(15 downto 0);
-  signal end_address     : std_logic_vector(15 downto 0);
+  signal current_address      : std_logic_vector(15 downto 0);
+  signal current_address_next : std_logic_vector(15 downto 0);
 
-  signal last_word   : std_logic_vector(7 downto 0);
-  constant zero_word : std_logic_vector(7 downto 0) := (others => '0');
+  signal end_address      : std_logic_vector(15 downto 0);
+  signal end_address_next : std_logic_vector(15 downto 0);
 
-  signal last_credibility   : std_logic_vector(7 downto 0);
+  signal last_word      : std_logic_vector(7 downto 0);
+  signal last_word_next : std_logic_vector(7 downto 0);
+
+  signal last_credibility      : std_logic_vector(7 downto 0);
+  signal last_credibility_next : std_logic_vector(7 downto 0);
+
+  constant zero_word        : std_logic_vector(7 downto 0) := (others => '0');
   constant zero_credibility : std_logic_vector(7 downto 0) := (others => '0');
   constant max_credibility  : std_logic_vector(7 downto 0) := "00011111";
 
@@ -73,14 +79,14 @@ begin
         o_mem_addr <= (others => '-');
         o_mem_data <= (others => '-');
 
-        -- Set signals
-        current_address  <= i_add;
-        end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
-        last_credibility <= zero_credibility;
-        last_word        <= zero_word;
-
         if i_start = '1' then
           next_state <= STATE_ACTIVE;
+
+          -- Set signals
+          current_address  <= i_add;
+          end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
+          last_credibility <= zero_credibility;
+          last_word        <= zero_word;
         else
           next_state <= STATE_IDLE;
         end if;
