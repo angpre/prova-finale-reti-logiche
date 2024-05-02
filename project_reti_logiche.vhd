@@ -60,14 +60,16 @@ begin
       current_state <= STATE_IDLE;
 
       -- Reset all other signals
-      current_address <= (others => '0');
+      current_address  <= (others => '0');
+      last_credibility <= zero_credibility;
 
     elsif rising_edge(i_clk) then
       -- Update state
       current_state <= next_state;
 
       -- Update signals
-      current_address  <= current_address_next;
+      current_address <= current_address_next;
+      last_credibility <= last_credibility_next;
 
     end if;
   end process;
@@ -75,6 +77,9 @@ begin
   -- This process selects next state and handles the logic
   lambda : process (current_state, i_start)
   begin
+    current_address_next  <= current_address;
+    last_credibility_next <= last_credibility;
+
     case current_state is
       when STATE_IDLE =>
         o_done <= '0';
@@ -90,9 +95,9 @@ begin
 
           -- Set signals
           current_address_next  <= i_add;
-          end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
-          last_credibility <= zero_credibility;
-          last_word        <= zero_word;
+          end_address           <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
+          last_credibility_next <= zero_credibility;
+          last_word             <= zero_word;
         else
           next_state <= STATE_IDLE;
         end if;
@@ -159,12 +164,12 @@ begin
         if i_mem_data /= zero_word then
           -- If the read word is non zero, write max credibility to memory
           current_address_next <= std_logic_vector(unsigned(current_address) + 2);
-          o_mem_addr      <= std_logic_vector(unsigned(current_address) + 1);
-          o_mem_data      <= max_credibility;
+          o_mem_addr           <= std_logic_vector(unsigned(current_address) + 1);
+          o_mem_data           <= max_credibility;
 
           -- and  save the current word as the last non-zero word
-          last_word        <= i_mem_data;
-          last_credibility <= max_credibility;
+          last_word             <= i_mem_data;
+          last_credibility_next <= max_credibility;
 
           next_state <= STATE_ACTIVE;
 
@@ -175,10 +180,10 @@ begin
 
           -- The new zero word's credibility is min(last_credibility - 1, 0)
           if last_credibility /= zero_credibility then
-            last_credibility <= std_logic_vector(unsigned(last_credibility) - 1);
+            last_credibility_next <= std_logic_vector(unsigned(last_credibility) - 1);
           else
             -- TODO maybe the else is not needed (check if removing it generates latches)
-            last_credibility <= zero_credibility;
+            last_credibility_next <= zero_credibility;
           end if;
 
           current_address_next <= std_logic_vector(unsigned(current_address) + 1);
