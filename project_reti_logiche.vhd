@@ -59,9 +59,15 @@ begin
       -- Go to the first state
       current_state <= STATE_IDLE;
 
+      -- Reset all other signals
+      current_address <= (others => '0');
+
     elsif rising_edge(i_clk) then
       -- Update state
       current_state <= next_state;
+
+      -- Update signals
+      current_address  <= current_address_next;
 
     end if;
   end process;
@@ -83,7 +89,7 @@ begin
           next_state <= STATE_ACTIVE;
 
           -- Set signals
-          current_address  <= i_add;
+          current_address_next  <= i_add;
           end_address      <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
           last_credibility <= zero_credibility;
           last_word        <= zero_word;
@@ -152,7 +158,7 @@ begin
 
         if i_mem_data /= zero_word then
           -- If the read word is non zero, write max credibility to memory
-          current_address <= std_logic_vector(unsigned(current_address) + 2);
+          current_address_next <= std_logic_vector(unsigned(current_address) + 2);
           o_mem_addr      <= std_logic_vector(unsigned(current_address) + 1);
           o_mem_data      <= max_credibility;
 
@@ -175,7 +181,7 @@ begin
             last_credibility <= zero_credibility;
           end if;
 
-          current_address <= std_logic_vector(unsigned(current_address) + 1);
+          current_address_next <= std_logic_vector(unsigned(current_address) + 1);
 
           next_state <= STATE_WRITE_DECREMENTED_CRED;
 
@@ -191,7 +197,7 @@ begin
         o_mem_addr <= current_address;
 
         -- Update the current address to point to next word
-        current_address <= std_logic_vector(unsigned(current_address) + 1);
+        current_address_next <= std_logic_vector(unsigned(current_address) + 1);
 
         next_state <= STATE_ACTIVE;
     end case;
