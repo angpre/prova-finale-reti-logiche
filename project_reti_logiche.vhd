@@ -60,8 +60,9 @@ begin
       current_state <= STATE_IDLE;
 
       -- Reset all other signals
-      current_address  <= (others => '0');
-      last_credibility <= zero_credibility;
+      current_address  <= (others => '-');
+      last_credibility <= (others => '-');
+      last_word        <= (others => '-');
 
     elsif rising_edge(i_clk) then
       -- Update state
@@ -70,6 +71,7 @@ begin
       -- Update signals
       current_address <= current_address_next;
       last_credibility <= last_credibility_next;
+      last_word        <= last_word_next;
 
     end if;
   end process;
@@ -79,6 +81,7 @@ begin
   begin
     current_address_next  <= current_address;
     last_credibility_next <= last_credibility;
+    last_word_next <= last_word;
 
     case current_state is
       when STATE_IDLE =>
@@ -97,7 +100,7 @@ begin
           current_address_next  <= i_add;
           end_address           <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
           last_credibility_next <= zero_credibility;
-          last_word             <= zero_word;
+          last_word_next             <= zero_word;
         else
           next_state <= STATE_IDLE;
         end if;
@@ -168,7 +171,7 @@ begin
           o_mem_data           <= max_credibility;
 
           -- and  save the current word as the last non-zero word
-          last_word             <= i_mem_data;
+          last_word_next             <= i_mem_data;
           last_credibility_next <= max_credibility;
 
           next_state <= STATE_ACTIVE;
