@@ -96,6 +96,9 @@ begin
     -- Default done assignment
     o_done <= '0';
 
+    -- Default next state assignment
+    next_state <= STATE_IDLE;
+
     case current_state is
       when STATE_IDLE =>
         -- Keep memory disabled
@@ -108,8 +111,6 @@ begin
           end_address_next      <= std_logic_vector(unsigned(i_add) + unsigned(i_k & '0'));
           last_credibility_next <= zero_credibility;
           last_word_next        <= zero_word;
-        else
-          next_state <= STATE_IDLE;
         end if;
 
       when STATE_ACTIVE =>
