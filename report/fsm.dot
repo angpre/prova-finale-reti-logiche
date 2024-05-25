@@ -1,0 +1,24 @@
+digraph finite_state_machine {
+    rankdir=TB;
+
+    node [shape = box, style = rounded, color = "#5c8a99", fillcolor = "#5c8a99"];
+    edge [ labeldistance=0 ]
+    STATE_IDLE [label="STATE_IDLE"];
+    STATE_ACTIVE [label="STATE_ACTIVE"];
+    STATE_WAIT_WORD_READ [label="STATE_WAIT_WORD_READ"];
+    STATE_ZERO_WORD_CHECK_AND_WRITE [label="STATE_ZERO_WORD_CHECK_AND_WRITE"];
+    STATE_WRITE_DECREMENTED_CRED [label="STATE_WRITE_DECREMENTED_CRED"];
+    STATE_WAIT_START_LOW [label="STATE_WAIT_START_LOW"];
+
+    STATE_IDLE -> STATE_ACTIVE [label="i_start = 1"];
+    STATE_WAIT_START_LOW -> STATE_IDLE [label="i_start = 0"];
+    STATE_ACTIVE -> STATE_WAIT_START_LOW [label="current_address = end_address"];
+    STATE_ACTIVE -> STATE_WAIT_WORD_READ [label="current_address != end_address"];
+    STATE_WAIT_WORD_READ -> STATE_ZERO_WORD_CHECK_AND_WRITE [];
+    STATE_ZERO_WORD_CHECK_AND_WRITE -> STATE_ACTIVE [label="i_mem_data != 0"];
+    STATE_ZERO_WORD_CHECK_AND_WRITE -> STATE_WRITE_DECREMENTED_CRED [label="i_mem_data = zero_word"]
+    STATE_WRITE_DECREMENTED_CRED -> STATE_ACTIVE
+    
+    { rank = top; "" [style=invis]; }
+    "" -> STATE_IDLE [label="i_rst = 1"];
+}

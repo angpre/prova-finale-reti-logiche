@@ -1,5 +1,6 @@
 #import "@preview/finite:0.3.0"
 #import "@preview/lovelace:0.2.0": *
+#import "@preview/diagraph:0.2.4"
 
 #show: setup-lovelace
 
@@ -11,7 +12,7 @@
 
 // Titolo
 #align(right, 
-  text(20pt, weight: "bold", polimiColor, [Progetto Reti Logiche \ 2023/2024])
+  text(19pt, weight: "bold", polimiColor, [Progetto Reti Logiche \ 2023/2024])
 )
 
 // Info
@@ -119,24 +120,25 @@ La macchina a stati finiti dell'architecture del componente è una macchina di M
   Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato di scrittura della credibilità decrementata, altrimenti, scriviamo nell'indirizzo successivo in RAM il massimo valore di credibilità (31) e torniamo nello stato active.
 - *STATE_WRITE_DECREMENTED_CRED*: Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
 
-#finite.automaton((
-    idle: (active: "i_start = 1"),
-    active: (waitStartLow: "processed all addresses", waitReadWord: "addresses to process left"),
-    waitStartLow: (idle: "i_start = 0"),
-    waitReadWord: (checkZeroWordAndWrite: ""),
-    checkZeroWordAndWrite: (writeDecrementedCredibility: "read word is 0", active: "read word is non-zero"),
-    writeDecrementedCredibility: (active: ""),
-  ),
-  initial: "idle",
-  layout: finite.layout.custom.with(positions:(..)=> (
-    idle: (2,10),
-    active: (0,8),
-    waitStartLow: (4,8),
-    waitReadWord: (0,4),
-    checkZeroWordAndWrite: (0,2),
-    writeDecrementedCredibility: (0,0),
-  )),
-)
+// #finite.automaton((
+//     idle: (active: "i_start = 1"),
+//     active: (waitStartLow: "processed all addresses", waitReadWord: "addresses to process left"),
+//     waitStartLow: (idle: "i_start = 0"),
+//     waitReadWord: (checkZeroWordAndWrite: ""),
+//     checkZeroWordAndWrite: (writeDecrementedCredibility: "read word is 0", active: "read word is non-zero"),
+//     writeDecrementedCredibility: (active: ""),
+//   ),
+//   layout: finite.layout.custom.with(positions:(..)=> (
+//     idle: (2,10),
+//     active: (0,8),
+//     waitStartLow: (4,8),
+//     waitReadWord: (0,4),
+//     checkZeroWordAndWrite: (0,2),
+//     writeDecrementedCredibility: (0,0),
+//   )),
+// )
+
+#diagraph.render(width: 80%, read("./fsm.dot"))
 
 === Processo 1: Clock e reset asincrono
 === Processo 2: Scelta stati e scritture in memoria
@@ -157,8 +159,11 @@ La macchina a stati finiti dell'architecture del componente è una macchina di M
 
 // b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine € mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
 
+Il componente è stato sottoposto a testbeches scritti a mano per verificare gli edge-cases e testbeches casuali per verificare il corretto funzionamento su vari range di memoria.
+
 === Testbench 1
 // i. test bench 1 (cosa fa e perché lo fa e cosa verifica; per esempio controlla una condizione limite)
+Il primo testbench è 
 
 === Testbench 2
 // ii. test bench 2 (....)
