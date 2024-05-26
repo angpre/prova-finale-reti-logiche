@@ -5,20 +5,53 @@
 #show: setup-lovelace
 
 #let polimiColor = color.cmyk(40%,10%,0%,40%)
+
+// Headings style
 #show heading: set text(fill: polimiColor)
+
+// Headings numbering
+#let clean_numbering(..schemes) = {
+  (..nums) => {
+    let (section, ..subsections) = nums.pos()
+    let (section_scheme, ..subschemes) = schemes.pos()
+
+    if subsections.len() == 0 {
+      numbering(section_scheme, section)
+    } else if subschemes.len() == 0 {
+      numbering(section_scheme, ..nums.pos())
+    }
+    else {
+      clean_numbering(..subschemes)(..subsections)
+    }
+  }
+}
+#set heading(numbering: clean_numbering("1.", "a.", "i."))
+
+// Paragraph styling
+#set par(justify: true)
 
 // Polimi logo
 #image("logo_polimi_ing_indinf.svg", width: 70%)
 
-// Titolo
-#align(right, 
-  text(19pt, weight: "bold", polimiColor, [Progetto Reti Logiche \ 2023/2024])
-)
+#line(length: 100%, stroke: 0.7pt + polimiColor)
 
+// Titolo
+#box(
+text(19pt, weight: "bold", polimiColor, [Prova finale: Reti Logiche \ 2023/2024])
+)
+#h(1fr)
 // Info
-*Angelo Prete* \
+#box(
+align(right, text(11pt,
+[*Angelo Prete* \
 #link("mailto:angelo2.prete@mail.polimi.it") \
-10767149
+10767149]
+)))
+
+// #v(-7pt)
+#line(length: 100%, stroke: 0.7pt + polimiColor)
+
+#v(17pt)
 
 // Schema della Relazione
 
@@ -52,7 +85,8 @@ entity ram is
 end ram;
 ```
 In particolare, deve essere collegata al componente realizzato come in tabella
-#table(
+#align(center,
+table(
   columns: 4,
   [Segnale], [RAM], [Componente], [Dimensione],
   [Enable],[en],[o_mem_en],[1 bit],
@@ -60,7 +94,7 @@ In particolare, deve essere collegata al componente realizzato come in tabella
   [Address],[addr],[o_mem_addr],[16 bits],
   [Data in],[di],[i_mem_data],[8 bits],
   [Data out],[do],[o_mem_data],[8 bits],
-)
+))
 e RAM e componente stesso devono condividere il segnale di clock.
 
 == Descrizione funzionamento
@@ -74,7 +108,7 @@ Funzionamento modulo:
   [*input:* indirizzo di partenza $a$, numero di iterazioni $k$], no-number,
   [$a_f <- a + 2*k$ (indirizzo finale da processare più uno)], no-number,
   [$d_l <- 0$ (ultimo dato letto diverso da 0)],no-number,
-  [$c_l <- 0$ ultima credibilità],no-number,
+  [$c_l <- 0$ (ultima credibilità)],no-number,
   [$"RAM"$ (memoria RAM rappresentata come un vettore)],no-number,
   [*while* $a != a_f$ *do*], ind,no-number,
     $d <- "RAM"[a]$,no-number,
@@ -93,8 +127,6 @@ Funzionamento modulo:
 3. Finita l'operazione, il componente lo segnala ponendo *o_done* alto e aspetta che venga portato basso il segnale *o_start*.
 
 == Esempio funzionamento
-
-
 
 = Architettura
 
@@ -138,7 +170,9 @@ La macchina a stati finiti dell'architecture del componente è una macchina di M
 //   )),
 // )
 
-#diagraph.render(width: 80%, read("./fsm.dot"))
+#align(center,
+  diagraph.render(width: 80%, read("./fsm.dot"))
+)
 
 === Processo 1: Clock e reset asincrono
 === Processo 2: Scelta stati e scritture in memoria
@@ -155,21 +189,47 @@ La macchina a stati finiti dell'architecture del componente è una macchina di M
 
 // a. Sintesi (Report del tool di sintesi adeguatamente commentato)
 
+A seguito del processo di sintesi (con target *xa7a12tcpg238-2I*), otteniamo i seguenti dati:
+
+```
++-------------------------+------+-------+-----------+-------+
+|        Site Type        | Used | Fixed | Available | Util% |
++-------------------------+------+-------+-----------+-------+
+| Slice LUTs*             |   78 |     0 |    134600 |  0.06 |
+|   LUT as Logic          |   78 |     0 |    134600 |  0.06 |
+|   LUT as Memory         |    0 |     0 |     46200 |  0.00 |
+| Slice Registers         |   51 |     0 |    269200 |  0.02 |
+|   Register as Flip Flop |   51 |     0 |    269200 |  0.02 |
+|   Register as Latch     |    0 |     0 |    269200 |  0.00 |
+| F7 Muxes                |    0 |     0 |     67300 |  0.00 |
+| F8 Muxes                |    0 |     0 |     33650 |  0.00 |
++-------------------------+------+-------+-----------+-------+
+```
+
+Notiamo che il componente usa:
+- *51 flip flop* (0.02%), tutti e soli i previsti
+- *78 look-up tables* (0.06%)
+- *0 latches*, risultato ottenuto grazie ad opportune scelte progettuali
+La percentuale di occupazione degli elementi disponibili è molto bassa: la logica implementata è molto semplice e non necessita di ampi spazi di memoria o complesse operazioni.
+
 == Simulazioni
 
 // b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine € mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
 
-Il componente è stato sottoposto a testbeches scritti a mano per verificare gli edge-cases e testbeches casuali per verificare il corretto funzionamento su vari range di memoria.
+Il componente è stato sottoposto sia testbeches scritti a mano per verificare il suo comportamento in edge-cases, sia a testbeches generati casualmente per verificare il corretto funzionamento su vari range di memoria.
 
-=== Testbench 1
+=== Testbench ufficiale
 // i. test bench 1 (cosa fa e perché lo fa e cosa verifica; per esempio controlla una condizione limite)
-Il primo testbench è 
+Il primo testbench ad essere stato provato è quello presente nei materiali per il progetto, funziona correttamente e rispetta i vincoli di clock.
 
-=== Testbench 2
+=== Start multipli
 // ii. test bench 2 (....)
+Questo testbench è stato scritto per verificare il corretto funzionamento del componente a seguito di più esecuzioni senza reset intermedi. 
 
-=== Testbench 3
+=== Reset durante l'esecuzione
 // iii.
+Grazie a questo test si è dimostrato il funzionamento del componente quando il segnale di reset asincrono viene portato a 1 durante l'esecuzione.
 
 = Conclusioni
 // 4. Conclusioni (mezza pagina max)
+Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta infatti particolare attenzione ad utilizzare un nm
