@@ -4,7 +4,20 @@
 
 #show: setup-lovelace
 
+#set raw(syntaxes: "VHDL.sublime-syntax")
+
 #let polimiColor = color.cmyk(40%,10%,0%,40%)
+
+// Table styling
+#set table(
+  stroke: none,
+  gutter: 0.2em,
+  fill: (x, y) =>
+    if (x == 0 or y == 0) and not (x==0 and y==0) {
+      polimiColor.lighten(80%)
+    },
+  inset: (right: 1.5em),
+)
 
 // Headings style
 #show heading: set text(fill: polimiColor)
@@ -60,7 +73,9 @@ align(right, text(11pt,
 = Introduzione
 // 1. Introduzione: L'obiettivo non è la "copia" della specifica ma una elaborazione, con un esempio e, se é possibile, un disegno e/o una immagine, che spieghi cosa succede;
 
-Il componente realizzato si occupa di elaborare una sequenza in memoria andando a sostituire alle celle con valori pari a $0$, che possono essere interpretati come valori mancanti, l'ultimo valore valido la cui credibilità viene decrementata man mano. Il componente potrebbe essere utilizzato, ad esempio, per correggere letture assenti di sensori, che spesso indicano valori assenti con $0$.
+Il componente realizzato elabora una sequenza di dati presenti in una memoria RAM sostituendo alle celle con valore $0$, interpretabili come valori assenti, l'ultimo dato con valore valido, con credibilità opportunamente decrementata.
+
+Un esempio di applicazione è la correzione di letture assenti di sensori, solitamente segnalate tramite il valore $0$.
 
 Il componente presenta i seguenti ingressi e uscite
 #figure(
@@ -70,8 +85,8 @@ descritti con più dettaglio nei paragrafi successivi.
 
 == Collegamento a memoria RAM
 
-Il componente deve essere collegato a una memoria RAM che rispetta la seguente interfaccia
-```
+Il componente deve essere collegato a una memoria RAM che ha interfaccia
+```VHDL
 entity ram is
     port
     (
@@ -84,32 +99,33 @@ entity ram is
     );
 end ram;
 ```
-In particolare, deve essere collegata al componente realizzato come in tabella
-#align(center,
-table(
+Sono specificate nella tabella seguente le corrispondeze tra segnali della memoria RAM e del componente:
+#table(
   columns: 4,
-  [Segnale], [RAM], [Componente], [Dimensione],
+  [], [RAM (segnale)], [Componente (segnale)], [Dimensione],
   [Enable],[en],[o_mem_en],[1 bit],
   [Write enable],[we],[o_mem_we],[1 bit],
   [Address],[addr],[o_mem_addr],[16 bits],
   [Data in],[di],[i_mem_data],[8 bits],
   [Data out],[do],[o_mem_data],[8 bits],
-))
-e RAM e componente stesso devono condividere il segnale di clock.
+)
+
+RAM e componente, inoltre, devono condividere lo stesso segnale di clock.
 
 == Descrizione funzionamento
 
-Funzionamento modulo:
-1. Vengono forniti in input l'indirizzo di partenza, il numero di coppie (divise in valore e credibilità) di celle da processare e un segnale di start (dopo l'eventuale segnale di reset)
-2. Il modulo inizia a processare i dati in memoria, come descritto nel seguente pseudocodice
+Possiamo descrivere il funzionamento dividendolo in tre fasi:
+
+1. *Inizializzazione*: vengono forniti in input l'indirizzo iniziale, il numero di coppie (valore + credibilità) di celle da processare e un segnale di start; questa fase segue un eventuale reset o il termine di un'esecuzione precedente.
+2. *Aggiornamento*: Il modulo inizia a processare i dati in memoria, aggiornandoli come descritto dal seguente pseudocodice
 
 #pseudocode(
   no-number,
   [*input:* indirizzo di partenza $a$, numero di iterazioni $k$], no-number,
-  [$a_f <- a + 2*k$ (indirizzo finale da processare più uno)], no-number,
+  [$a_f <- a + 2*k$ (indirizzo finale, escluso)], no-number,
   [$d_l <- 0$ (ultimo dato letto diverso da 0)],no-number,
   [$c_l <- 0$ (ultima credibilità)],no-number,
-  [$"RAM"$ (memoria RAM rappresentata come un vettore)],no-number,
+  [$"RAM"$ (memoria RAM rappresentata come vettore)],no-number,
   [*while* $a != a_f$ *do*], ind,no-number,
     $d <- "RAM"[a]$,no-number,
     [*if* $d!=0$ *then*], ind,no-number,
@@ -124,7 +140,7 @@ Funzionamento modulo:
     [$a <- a + 2$], ded,no-number,
   [*end*], no-number,
 )
-3. Finita l'operazione, il componente lo segnala ponendo *o_done* alto e aspetta che venga portato basso il segnale *o_start*.
+3. *Terminazione*: la fine della fase di aggiornamento è seguita da una segnalazione da parte del componente: _o_done_ viene posto alto e si rimane in attesa di osservare basso il segnale _i_start_.
 
 == Esempio funzionamento
 
@@ -139,35 +155,48 @@ Data la semplicità del componente, non si è ritenuto necessario dividerlo in p
 La macchina a stati finiti dell'architecture del componente è una macchina di Mealy. Internamente, le transizioni della FSM sono sul fronte di salita del clock.
 
 È composta da 6 stati, sono quindi necessari 3 flip flop per memorizzare lo stato corrente. Ogni stato ha uno specifico compito:
-- *STATE_IDLE*:
+- *STATE_IDLE*: \
   Quando la FSM è in attesa di iniziare una nuova computazione, si trova in questo stato. È possibile arrivare qui a seguito del reset asincrono o della fine di una computazione.
-- *STATE_ACTIVE*:
+- *STATE_ACTIVE*: \
   In questo stato la FSM decide se processare una nuova coppia di indirizzi di memoria, a seguito di un controllo sull'indirizzo da processare, oppure teminare la computazione.
   Se l'indirizzo da processare non è l'ultimo, si preparano i segnali di memoria per leggere il dato all'indirizzo corrente.
-- *STATE_WAIT_START_LOW*:
+- *STATE_WAIT_START_LOW*: \
   Arriviamo in questo stato quando gli indirizzi da processare sono finiti, la macchina segnala questo ponendo il segnale o_done alto e aspetta che i_start venga abbassato a 0, evento seguito dal ritorno nello stato di idle.  
-- *STATE_WAIT_WORD_READ*: 
+- *STATE_WAIT_WORD_READ*: \
   Questo stato serve per permettere alla memoria di fornire il dato richiesto negli stati precedenti; infatti, da specifica, la memoria ha un delay di 2 nanosecondi solo al termine dei quali può fornire il dato richiesto.
-- *STATE_ZERO_WORD_CHECK_AND_WRITE*:
+- *STATE_ZERO_WORD_CHECK_AND_WRITE*: \
   Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato di scrittura della credibilità decrementata, altrimenti, scriviamo nell'indirizzo successivo in RAM il massimo valore di credibilità (31) e torniamo nello stato active.
-- *STATE_WRITE_DECREMENTED_CRED*: Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
+- *STATE_WRITE_DECREMENTED_CRED*: \
+  Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
 
-// #finite.automaton((
-//     idle: (active: "i_start = 1"),
+// #finite.automaton(
+//   style: (
+//     state: (
+//       stroke: 2pt + polimiColor,
+//       radius: 1,
+//     ),
+//     transition: (
+
+//     )
+//   ),
+//   (
+//     IDLE: (active: "i_start = 1"),
 //     active: (waitStartLow: "processed all addresses", waitReadWord: "addresses to process left"),
-//     waitStartLow: (idle: "i_start = 0"),
+//     waitStartLow: (IDLE: "i_start = 0"),
 //     waitReadWord: (checkZeroWordAndWrite: ""),
 //     checkZeroWordAndWrite: (writeDecrementedCredibility: "read word is 0", active: "read word is non-zero"),
 //     writeDecrementedCredibility: (active: ""),
 //   ),
-//   layout: finite.layout.custom.with(positions:(..)=> (
-//     idle: (2,10),
-//     active: (0,8),
-//     waitStartLow: (4,8),
-//     waitReadWord: (0,4),
-//     checkZeroWordAndWrite: (0,2),
-//     writeDecrementedCredibility: (0,0),
-//   )),
+//   layout: finite.layout.custom.with(positions:(..) =>
+//     (
+//       IDLE: (0,12),
+//       active: (0,9),
+//       waitStartLow: (3,9),
+//       waitReadWord: (0,6),
+//       checkZeroWordAndWrite: (0,3),
+//       writeDecrementedCredibility: (0,0),
+//     )
+//   ),
 // )
 
 #align(center,
@@ -191,20 +220,34 @@ La macchina a stati finiti dell'architecture del componente è una macchina di M
 
 A seguito del processo di sintesi (con target *xa7a12tcpg238-2I*), otteniamo i seguenti dati:
 
-```
-+-------------------------+------+-------+-----------+-------+
-|        Site Type        | Used | Fixed | Available | Util% |
-+-------------------------+------+-------+-----------+-------+
-| Slice LUTs*             |   78 |     0 |    134600 |  0.06 |
-|   LUT as Logic          |   78 |     0 |    134600 |  0.06 |
-|   LUT as Memory         |    0 |     0 |     46200 |  0.00 |
-| Slice Registers         |   51 |     0 |    269200 |  0.02 |
-|   Register as Flip Flop |   51 |     0 |    269200 |  0.02 |
-|   Register as Latch     |    0 |     0 |    269200 |  0.00 |
-| F7 Muxes                |    0 |     0 |     67300 |  0.00 |
-| F8 Muxes                |    0 |     0 |     33650 |  0.00 |
-+-------------------------+------+-------+-----------+-------+
-```
+// ```
+// +-------------------------+------+-------+-----------+-------+
+// |        Site Type        | Used | Fixed | Available | Util% |
+// +-------------------------+------+-------+-----------+-------+
+// | Slice LUTs*             |   78 |     0 |    134600 |  0.06 |
+// |   LUT as Logic          |   78 |     0 |    134600 |  0.06 |
+// |   LUT as Memory         |    0 |     0 |     46200 |  0.00 |
+// | Slice Registers         |   51 |     0 |    269200 |  0.02 |
+// |   Register as Flip Flop |   51 |     0 |    269200 |  0.02 |
+// |   Register as Latch     |    0 |     0 |    269200 |  0.00 |
+// | F7 Muxes                |    0 |     0 |     67300 |  0.00 |
+// | F8 Muxes                |    0 |     0 |     33650 |  0.00 |
+// +-------------------------+------+-------+-----------+-------+
+// ```
+
+#align(center, 
+table(
+  columns: 5,
+  [], [Used], [Fixed], [Available], [Util%],
+  [Slice LUTs\*], [78], [0], [134600], [0.06],
+  [LUT as Logic], [78], [0], [134600], [0.06],
+  [LUT as Memory], [0], [0], [46200], [0.00],
+  [Slice Registers], [51], [0], [269200], [0.02],
+  [Register as Flip Flop], [51], [0], [269200], [0.02],
+  [Register as Latch], [0], [0], [269200], [0.00],
+  [F7 Muxes], [0], [0], [67300], [0.00],
+  [F8 Muxes], [0], [0], [33650], [0.00]
+))
 
 Notiamo che il componente usa:
 - *51 flip flop* (0.02%), tutti e soli i previsti
@@ -232,4 +275,4 @@ Grazie a questo test si è dimostrato il funzionamento del componente quando il 
 
 = Conclusioni
 // 4. Conclusioni (mezza pagina max)
-Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta infatti particolare attenzione ad utilizzare un nm
+Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta infatti particolare attenzione a ridurre il numero di stati, tenendo conto allo stesso tempo della leggibilità del codice. 

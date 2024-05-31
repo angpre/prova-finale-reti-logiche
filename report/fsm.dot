@@ -1,6 +1,5 @@
 digraph finite_state_machine {
     rankdir=TB;
-
     node [shape = box, style = rounded, color = "#5c8a99", fillcolor = "#5c8a99"];
     edge [ labeldistance=0 ]
     STATE_IDLE [label="STATE_IDLE"];
