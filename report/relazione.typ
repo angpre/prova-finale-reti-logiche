@@ -4,6 +4,9 @@
 
 #show: setup-lovelace
 
+#set figure(numbering: none)
+#show figure.caption: emph
+
 #set raw(syntaxes: "VHDL.sublime-syntax")
 
 #let polimiColor = color.cmyk(40%,10%,0%,40%)
@@ -75,18 +78,19 @@ align(right, text(11pt,
 
 Il componente realizzato elabora una sequenza di dati presenti in una memoria RAM sostituendo alle celle con valore $0$, interpretabili come valori assenti, l'ultimo dato con valore valido, con credibilità opportunamente decrementata.
 
-Un esempio di applicazione è la correzione di letture assenti di sensori, solitamente segnalate tramite il valore $0$.
-
-Il componente presenta i seguenti ingressi e uscite
 #figure(
+  caption: "Rappresentazione grafica dell'interfaccia del componente",
   image("project_reti_logiche.svg")
 )
-descritti con più dettaglio nei paragrafi successivi.
+
+Un esempio di applicazione è la correzione di letture assenti di sensori, solitamente segnalate tramite il valore $0$.
+
+Nei paragrafi successivi è fornita una descrizione sia dei segnali necessari per il corretto funzionamento, sia del funzionamento del componente in maggior dettaglio.
 
 == Collegamento a memoria RAM
 
 Il componente deve essere collegato a una memoria RAM che ha interfaccia
-```VHDL
+```
 entity ram is
     port
     (
@@ -99,8 +103,10 @@ entity ram is
     );
 end ram;
 ```
-Sono specificate nella tabella seguente le corrispondeze tra segnali della memoria RAM e del componente:
-#table(
+Specifichiamo, nella tabella seguente, le corrispondeze tra segnali della memoria RAM e del componente:
+
+#align(center,
+table(
   columns: 4,
   [], [RAM (segnale)], [Componente (segnale)], [Dimensione],
   [Enable],[en],[o_mem_en],[1 bit],
@@ -108,9 +114,16 @@ Sono specificate nella tabella seguente le corrispondeze tra segnali della memor
   [Address],[addr],[o_mem_addr],[16 bits],
   [Data in],[di],[i_mem_data],[8 bits],
   [Data out],[do],[o_mem_data],[8 bits],
-)
+))
 
-RAM e componente, inoltre, devono condividere lo stesso segnale di clock.
+Ricordiamo infine che RAM e componente devono condividere lo stesso segnale di clock.
+
+== Collegamento all'utilizzatore
+
+L'utilizzatore del componente qui specificato dovrà fornire come segnali di ingresso:
+- *i_rst*: reset asincrono del componente
+- *i_srt*: segnale di avvio
+- *i_add*:  
 
 == Descrizione funzionamento
 
@@ -144,6 +157,31 @@ Possiamo descrivere il funzionamento dividendolo in tre fasi:
 
 == Esempio funzionamento
 
+In questa sezione mostriamo il risultato di una computazione, introducendo anche uno dei possibili edge-cases, ovvero l'inizio di una sequenza con uno zero.
+
+Siano dati in ingresso $"i_k"=37$ e $"i_add"=157$; sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono stati evidenziati in grassetto per distinguerli dalla credibilità):
+
+#grid(
+  columns: (1fr, 0.1fr, 1fr),
+  image("EXAMPLE.png"),
+  [],
+  [
+    Il primo dato letto è uno zero e, non avendo letto nessun altro dato prima il suo valore rimane inalterato e la sua credibilità viene posta a zero.
+
+    Il dato successivo è pari a $13$, è quindi non nullo e possiamo assegnarli credibilità massima ($31$).
+
+    Troviamo ora una serie di dati pari a $0$, ma avendo come ultimo dato salvato $13$ possiamo riscriverlo, associandolo ogni volta a una credibilità decrementa rispetto l'ultima utilizzata.
+
+    Quando la credibilità è stata già decrementata a $0$, se il dato nella cella successiva è nullo dobbiamo assegnarli credibilità nulla non potendola decrementare ulteriormente.
+
+    Infine incontriamo un nuovo dato diverso da $0$, $111$, e gli assegnamo credibilità $31$. Il dato successivo è pari a $0$ e quindi, come fatto precedentemente, lo sovrascriviamo con $111$ (l'ultimo dato valido) e gli assegnamo credibilità decrementata pari a $30$.
+  ]
+)
+
+== Osservazioni
+
+Notiamo che, nonostante le celle che ospitano la credibilità abbiano valore $0$ sia in questo esempio sia in tutti i test forniti nella specifica, non è il caso generale. È quindi necessario, qualora non si abbia la certezza che sia presente uno $0$, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a $0$. Controllare la cella che ospiterà la credibilità aggiornata per verificare che abbia valore nullo, seppur possibile, è un'operazione più costosta (un ciclo di clock in più) della semplice sovrascrittura.
+
 = Architettura
 
 // 2. Architettura: Lobiettivo è quello di riportare uno schema funzionale che consenta di valutare come la rete sia stata progettata (schema in moduli... un bel disegno chiaro... i segnali i bus, il/i clock, reset... i segnali interni che interconnettono i moduli, ...):
@@ -152,9 +190,40 @@ Data la semplicità del componente, non si è ritenuto necessario dividerlo in p
 == Macchina a stati finiti (entity project_reti_logiche)
 // a. Modulo 1 (la descrizione - sottoparagrafo - di ogni modulo e la scelta implementativa - per esempio, il modulo ... @ una collezione di process che implementano la macchina a stati e la parte di registri, .... La macchina a stati, il cui schema in termini di diagramma degli stati, ha 8 stati. Il primo rappresenta .... e svolge le operazioni di ... il secondo... etc etc)
 
-La macchina a stati finiti dell'architecture del componente è una macchina di Mealy. Internamente, le transizioni della FSM sono sul fronte di salita del clock.
+La macchina a stati finiti dell'architecture implementata è una macchina di Mealy.
+Internamente, le transizioni della FSM sono sul fronte di salita del clock.
+È composta da 6 stati, sono quindi necessari 3 flip flop per memorizzare lo stato corrente.
 
-È composta da 6 stati, sono quindi necessari 3 flip flop per memorizzare lo stato corrente. Ogni stato ha uno specifico compito:
+#figure(
+  caption: "Rappresentazione ad alto livello della FSM implementata",
+  image(
+    "./FSM-high-res.png",
+  )
+)
+
+#v(15pt)
+
+#figure(
+  caption: "Tabella di mapping dei nomi degli stati tra rappresentazione grafica e implementazione",
+  table(
+    fill: (x, y) =>
+      if y==0 {
+        polimiColor.lighten(80%)
+    },
+    columns: 2,
+    [_Nome stato implementato_], [_Abbreviazione_],
+    [STATE_IDLE], [IDLE],
+    [STATE_ACTIVE], [ACTIVE],
+    [STATE_WAIT_START_LOW], [WAIT_LOW],
+    [STATE_WAIT_WORD_READ], [WAIT_RD],
+    [STATE_ZERO_WORD_CHECK_AND_WRITE], [CHK_ZERO],
+    [STATE_WRITE_DECREMENTED_CRED], [WR_DECR],
+  )
+)
+
+
+Ogni stato ha uno specifico compito:
+
 - *STATE_IDLE*: \
   Quando la FSM è in attesa di iniziare una nuova computazione, si trova in questo stato. È possibile arrivare qui a seguito del reset asincrono o della fine di una computazione.
 - *STATE_ACTIVE*: \
@@ -169,42 +238,49 @@ La macchina a stati finiti dell'architecture del componente è una macchina di M
 - *STATE_WRITE_DECREMENTED_CRED*: \
   Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
 
+
 // #finite.automaton(
 //   style: (
 //     state: (
-//       stroke: 2pt + polimiColor,
-//       radius: 1,
+//       stroke: 1.5pt + polimiColor,
+//       radius: 0.8,
 //     ),
 //     transition: (
-
 //     )
 //   ),
 //   (
-//     IDLE: (active: "i_start = 1"),
-//     active: (waitStartLow: "processed all addresses", waitReadWord: "addresses to process left"),
-//     waitStartLow: (IDLE: "i_start = 0"),
-//     waitReadWord: (checkZeroWordAndWrite: ""),
-//     checkZeroWordAndWrite: (writeDecrementedCredibility: "read word is 0", active: "read word is non-zero"),
-//     writeDecrementedCredibility: (active: ""),
+//     IDLE: (ACTIVE: "i_start = 1"),
+//     ACTIVE: (WAIT_LOW: "processed all addresses", WAIT_RD: "addresses to process left"),
+//     WAIT_LOW: (IDLE: "i_start = 0"),
+//     WAIT_RD: (CHK_ZERO: ""),
+//     CHK_ZERO: (WR_DECR: "read word is 0", ACTIVE: "read word is non-zero"),
+//     WR_DECR: (ACTIVE: ""),
 //   ),
 //   layout: finite.layout.custom.with(positions:(..) =>
 //     (
 //       IDLE: (0,12),
-//       active: (0,9),
-//       waitStartLow: (3,9),
-//       waitReadWord: (0,6),
-//       checkZeroWordAndWrite: (0,3),
-//       writeDecrementedCredibility: (0,0),
+//       ACTIVE: (0,9),
+//       WAIT_LOW: (3,9),
+//       WAIT_RD: (0,6),
+//       CHK_ZERO: (0,3),
+//       WR_DECR: (0,0),
 //     )
 //   ),
 // )
 
-#align(center,
-  diagraph.render(width: 80%, read("./fsm.dot"))
+// #figure(caption: "FSM del componente (con opportune semplificazioni)",
+//   diagraph.render(width: 80%, read("./fsm.dot"))
 )
 
-=== Processo 1: Clock e reset asincrono
-=== Processo 2: Scelta stati e scritture in memoria
+=== Processo 1: Reset asincrono e clock
+
+Il primo processo della FSM ha due funzioni:
+- *Gestione del reset asincrono*: quando il segnale i_rst è alto, al registro contenente lo stato corrente viene assegnato lo stato di IDLE.
+- *Transizioni*: se siamo sul fronte di salita del segnale i_clk allora i registri contententi i valori correnti vengo assegnati i nuovi valori. Questa operazione aggiorna anche lo stato corrente che, essendo presente nella sensitivity list del Processo 2, lo "sveglia".
+
+=== Processo 2: Delta/Lambda
+
+Questo processo corrisponde alle funzioni $delta$ e $lambda$ della FSM di Mealy. Si occupa quindi di stabilire quale sarà il prossimo stato e quali valori fornire in output (sia verso la memoria, sia verso l'utilizzatore del modulo).
 
 
 == Modulo 2
@@ -275,4 +351,5 @@ Grazie a questo test si è dimostrato il funzionamento del componente quando il 
 
 = Conclusioni
 // 4. Conclusioni (mezza pagina max)
-Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta infatti particolare attenzione a ridurre il numero di stati, tenendo conto allo stesso tempo della leggibilità del codice. 
+Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta particolare attenzione a ridurre il numero di stati, tenendo conto allo stesso tempo della leggibilità del codice.
+

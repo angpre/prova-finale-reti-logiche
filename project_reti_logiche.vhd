@@ -53,7 +53,7 @@ architecture behavioral of project_reti_logiche is
 
 begin
   -- This process handles clock and reset.
-  state_manager : process (i_clk, i_rst)
+  clk_rst : process (i_clk, i_rst)
   begin
     if i_rst = '1' then
       -- Go to the first state
@@ -79,7 +79,7 @@ begin
   end process;
 
   -- This process selects next state and handles the logic
-  lambda : process (current_state, i_start)
+  delta_lambda : process (current_state, i_start)
   begin
     -- Default next signals assignments
     current_address_next  <= current_address;
