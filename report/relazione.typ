@@ -4,6 +4,10 @@
 
 #show: setup-lovelace
 
+#set page(
+  numbering: "1",
+)
+
 #set figure(numbering: none)
 #show figure.caption: emph
 
@@ -121,9 +125,12 @@ Ricordiamo infine che RAM e componente devono condividere lo stesso segnale di c
 == Collegamento all'utilizzatore
 
 L'utilizzatore del componente qui specificato dovrà fornire come segnali di ingresso:
+- *i_clk*: segnale di clock
 - *i_rst*: reset asincrono del componente
-- *i_srt*: segnale di avvio
-- *i_add*:  
+- *i_start*: segnale di avvio
+- *i_add*: indirizzo iniziale
+- *i_k*: numero di dati da processare
+Per segnalare la fine di una computazione, il componente fa uso del segnale *o_done*.
 
 == Descrizione funzionamento
 
@@ -155,7 +162,7 @@ Possiamo descrivere il funzionamento dividendolo in tre fasi:
 )
 3. *Terminazione*: la fine della fase di aggiornamento è seguita da una segnalazione da parte del componente: _o_done_ viene posto alto e si rimane in attesa di osservare basso il segnale _i_start_.
 
-== Esempio funzionamento
+== Esempio funzionamento <example>
 
 In questa sezione mostriamo il risultato di una computazione, introducendo anche uno dei possibili edge-cases, ovvero l'inizio di una sequenza con uno zero.
 
@@ -282,9 +289,8 @@ Il primo processo della FSM ha due funzioni:
 
 Questo processo corrisponde alle funzioni $delta$ e $lambda$ della FSM di Mealy. Si occupa quindi di stabilire quale sarà il prossimo stato e quali valori fornire in output (sia verso la memoria, sia verso l'utilizzatore del modulo).
 
-
-== Modulo 2
-// b. Modulo ...
+// == Modulo 2
+// // b. Modulo ...
 
 = Risultati sperimentali
 
@@ -335,21 +341,26 @@ La percentuale di occupazione degli elementi disponibili è molto bassa: la logi
 
 // b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine € mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
 
-Il componente è stato sottoposto sia testbeches scritti a mano per verificare il suo comportamento in edge-cases, sia a testbeches generati casualmente per verificare il corretto funzionamento su vari range di memoria.
+Il componente è stato sottoposto sia testbeches scritti a mano per verificare il suo comportamento nei vari in edge-cases, sia a testbenches generati automaticamente per controllare il corretto funzionamento su vari range di memoria.
 
 === Testbench ufficiale
 // i. test bench 1 (cosa fa e perché lo fa e cosa verifica; per esempio controlla una condizione limite)
-Il primo testbench ad essere stato provato è quello presente nei materiali per il progetto, funziona correttamente e rispetta i vincoli di clock.
+Il primo testbench ad essere stato provato è quello presente nei materiali per il progetto, funziona correttamente e rispetta i vincoli di clock. Inoltre, il componente funziona correttamente con tutti gli altri esempi forniti nella specifica.
 
 === Start multipli
 // ii. test bench 2 (....)
-Questo testbench è stato scritto per verificare il corretto funzionamento del componente a seguito di più esecuzioni senza reset intermedi. 
+Questo testbench è stato scritto per verificare il corretto funzionamento del componente in esecuzioni successive senza reset intermedi.
 
-=== Reset durante l'esecuzione
+=== Dato iniziale nullo
 // iii.
-Grazie a questo test si è dimostrato il funzionamento del componente quando il segnale di reset asincrono viene portato a 1 durante l'esecuzione.
+È stato necessario verificare che il componente funzionasse correttamente in condizioni simili a quelle dell'esempuo di funzionamento (@example)
+
+=== Reset durante la computazione
+Grazie a questo test si è mostrato il funzionamento del componente quando il segnale di reset viene portato alto durante una computazione.
+
+=== Reset durante accesso a memoria
+Come nel testbench precedente, si è verificato il funzionamento a seguito di reset, questa volta durante una lettura e poi una scrittura in memoria. 
 
 = Conclusioni
 // 4. Conclusioni (mezza pagina max)
-Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta particolare attenzione a ridurre il numero di stati, tenendo conto allo stesso tempo della leggibilità del codice.
-
+Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta particolare attenzione a ridurre il numero di stati, senza sacrificare allo stesso tempo la leggibilità del codice.
