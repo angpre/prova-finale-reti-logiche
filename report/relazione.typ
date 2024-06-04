@@ -139,7 +139,10 @@ Possiamo descrivere il funzionamento dividendolo in tre fasi:
 1. *Inizializzazione*: vengono forniti in input l'indirizzo iniziale, il numero di coppie (valore + credibilità) di celle da processare e un segnale di start; questa fase segue un eventuale reset o il termine di un'esecuzione precedente.
 2. *Aggiornamento*: Il modulo inizia a processare i dati in memoria, aggiornandoli come descritto dal seguente pseudocodice
 
-#pseudocode(
+#grid(
+  columns: (0.05fr, 1fr),
+  [],
+  pseudocode(
   no-number,
   [*input:* indirizzo di partenza $a$, numero di iterazioni $k$], no-number,
   [$a_f <- a + 2*k$ (indirizzo finale, escluso)], no-number,
@@ -160,6 +163,8 @@ Possiamo descrivere il funzionamento dividendolo in tre fasi:
     [$a <- a + 2$], ded,no-number,
   [*end*], no-number,
 )
+)
+
 3. *Terminazione*: la fine della fase di aggiornamento è seguita da una segnalazione da parte del componente: _o_done_ viene posto alto e si rimane in attesa di osservare basso il segnale _i_start_.
 
 == Esempio funzionamento <example>
@@ -187,7 +192,7 @@ Siano dati in ingresso $"i_k"=37$ e $"i_add"=157$; sia la situazione iniziale e 
 
 == Osservazioni
 
-Notiamo che, nonostante le celle che ospitano la credibilità abbiano valore $0$ sia in questo esempio sia in tutti i test forniti nella specifica, non è il caso generale. È quindi necessario, qualora non si abbia la certezza che sia presente uno $0$, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a $0$. Controllare la cella che ospiterà la credibilità aggiornata per verificare che abbia valore nullo, seppur possibile, è un'operazione più costosta (un ciclo di clock in più) della semplice sovrascrittura.
+Notiamo che, nonostante le celle che ospitano la credibilità abbiano valore $0$ sia in questo esempio sia in tutti i test forniti nella specifica, non è il caso generale. È quindi necessario, qualora non si abbia la certezza che sia presente uno $0$, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a $0$. Controllare la cella che ospiterà la credibilità aggiornata per verificare che abbia valore nullo, seppur possibile, è un'operazione più costosta (un ciclo di clock in più) rispetto alla semplice sovrascrittura.
 
 = Architettura
 
@@ -203,6 +208,7 @@ Internamente, le transizioni della FSM sono sul fronte di salita del clock.
 
 #figure(
   caption: "Rappresentazione ad alto livello della FSM implementata",
+  // TODO fare la freccia i_mem_data = 0 tonda
   image(
     "./FSM-high-res.png",
   )
@@ -229,22 +235,23 @@ Internamente, le transizioni della FSM sono sul fronte di salita del clock.
 )
 
 
-Ogni stato ha uno specifico compito:
+Descriviamo brevemente le azioni svolte dal componente quando si trova nei vari stati:
 
 - *STATE_IDLE*: \
-  Quando la FSM è in attesa di iniziare una nuova computazione, si trova in questo stato. È possibile arrivare qui a seguito del reset asincrono o della fine di una computazione.
+  La FSM  si trova in questo stato quando è in attesa di iniziare una nuova computazione (quando aspetta che il segnale i_start pari a 1). È possibile in STATE_IDLE sia a seguito del reset asincrono sia a seguito della fine di una computazione.
 - *STATE_ACTIVE*: \
-  In questo stato la FSM decide se processare una nuova coppia di indirizzi di memoria, a seguito di un controllo sull'indirizzo da processare, oppure teminare la computazione.
-  Se l'indirizzo da processare non è l'ultimo, si preparano i segnali di memoria per leggere il dato all'indirizzo corrente.
+  In questo stato viene deciso se bisogna processare un nuovo indirizzo di memoria oppure teminare la computazione.
+  Se l'indirizzo corrente è da processare, si preparano i segnali di memoria per leggere il dato all'indirizzo corrente, altrimenti ci si sposta nello stato STATE_WAIT_START_LOW.
 - *STATE_WAIT_START_LOW*: \
-  Arriviamo in questo stato quando gli indirizzi da processare sono finiti, la macchina segnala questo ponendo il segnale o_done alto e aspetta che i_start venga abbassato a 0, evento seguito dal ritorno nello stato di idle.  
+  Arriviamo in questo stato quando gli indirizzi da processare sono finiti, la macchina lo segnala all'utilizzatore ponendo il segnale o_done alto e aspetta che i_start venga abbassato, evento seguito dal ritorno nello stato di STATE_IDLE.
 - *STATE_WAIT_WORD_READ*: \
-  Questo stato serve per permettere alla memoria di fornire il dato richiesto negli stati precedenti; infatti, da specifica, la memoria ha un delay di 2 nanosecondi solo al termine dei quali può fornire il dato richiesto.
+  Questo stato serve per permettere alla memoria di fornire il dato richiesto negli stati precedenti; infatti, come stabilito nella specifica, la memoria ha un delay di 2 nanosecondi, solo al termine dei quali può fornire il dato richiesto.
 - *STATE_ZERO_WORD_CHECK_AND_WRITE*: \
-  Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato di scrittura della credibilità decrementata, altrimenti, scriviamo nell'indirizzo successivo in RAM il massimo valore di credibilità (31) e torniamo nello stato active.
+  Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato di scrittura della credibilità decrementata, altrimenti, scriviamo nell'indirizzo successivo in RAM il massimo valore di credibilità (31) e torniamo nello stato STATE_ACTIVE.
 - *STATE_WRITE_DECREMENTED_CRED*: \
-  Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
+  Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria nello stato STATE_ZERO_WORD_CHECK_AND_WRITE. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
 
+// TODO descrivere segnali interni
 
 // #finite.automaton(
 //   style: (
@@ -277,7 +284,7 @@ Ogni stato ha uno specifico compito:
 
 // #figure(caption: "FSM del componente (con opportune semplificazioni)",
 //   diagraph.render(width: 80%, read("./fsm.dot"))
-)
+// )
 
 === Processo 1: Reset asincrono e clock
 
@@ -332,14 +339,14 @@ table(
 ))
 
 Notiamo che il componente usa:
-- *51 flip flop* (0.02%), tutti e soli i previsti
+- *51 flip flop* (0.02%), tutti e soli i previsti. Nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti: una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di flip flop, è quella di salvare $k$ e decrementarlo.
 - *78 look-up tables* (0.06%)
 - *0 latches*, risultato ottenuto grazie ad opportune scelte progettuali
 La percentuale di occupazione degli elementi disponibili è molto bassa: la logica implementata è molto semplice e non necessita di ampi spazi di memoria o complesse operazioni.
 
 == Simulazioni
 
-// b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine € mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
+// b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine è mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
 
 Il componente è stato sottoposto sia testbeches scritti a mano per verificare il suo comportamento nei vari in edge-cases, sia a testbenches generati automaticamente per controllare il corretto funzionamento su vari range di memoria.
 
@@ -359,8 +366,15 @@ Questo testbench è stato scritto per verificare il corretto funzionamento del c
 Grazie a questo test si è mostrato il funzionamento del componente quando il segnale di reset viene portato alto durante una computazione.
 
 === Reset durante accesso a memoria
-Come nel testbench precedente, si è verificato il funzionamento a seguito di reset, questa volta durante una lettura e poi una scrittura in memoria. 
+Come nel testbench precedente, si è verificato il funzionamento a seguito di reset, questa volta durante una lettura e poi una scrittura in memoria.
+
+=== Credibilità a zero
+Con questo testbench si è voluto testare che la credibilità, qualora sia stata decrementata fino a zero, rimanga pari a zero se i nuovi dati letti abbiano valore nullo. 
 
 = Conclusioni
 // 4. Conclusioni (mezza pagina max)
 Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta particolare attenzione a ridurre il numero di stati, senza sacrificare allo stesso tempo la leggibilità del codice.
+
+Oltre a funzionare nelle simulazioni Behavioral e Post-Synthesis Functional, il componente ha il comportamento richiesto anche quando viene testato in simulazioni Post-Synthesis Timing.
+
+Come già anticipato, un possibile miglioramento per ridurre l'uso di flip flop è quello di cambiare la condizione di fine della computazione.
