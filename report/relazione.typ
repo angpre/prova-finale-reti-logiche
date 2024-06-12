@@ -122,9 +122,9 @@ table(
   [], [RAM (segnale)], [Componente (segnale)], [Dimensione],
   [Enable],[`en`],[`o_mem_en`],[1 bit],
   [Write enable],[`we`],[`o_mem_we`],[1 bit],
-  [Address],[`addr`],[`o_mem_addr`],[16 bits],
-  [Data in],[`di`],[`i_mem_data`],[8 bits],
-  [Data out],[`do`],[`o_mem_data`],[8 bits],
+  [Address],[`addr`],[`o_mem_addr`],[16 bit],
+  [Data in],[`di`],[`i_mem_data`],[8 bit],
+  [Data out],[`do`],[`o_mem_data`],[8 bit],
 ))
 
 Bisogna ricordare, infine, che RAM e componente devono condividere lo stesso segnale di clock.
@@ -272,11 +272,11 @@ Sono qui elencati i vari segnali con una brevissima descrizione:
   - *`current_state`* `: state_t`
   - *`next_state`*    `: state_t`
 
-- Memorizzazione dell'indirizzo corrente (da 16 bits)
+- Memorizzazione dell'indirizzo corrente (da 16 bit)
   - *`current_address`*      `: std_logic_vector(15 downto 0)`
   - *`current_address_next`* `: std_logic_vector(15 downto 0)`
 
-- Memorizzazione dell'indirizzo finale (anche questo a 16 bits)
+- Memorizzazione dell'indirizzo finale (anche questo a 16 bit)
   - *`end_address`*      `: std_logic_vector(15 downto 0)`
   - *`end_address_next`* `: std_logic_vector(15 downto 0)`
 
