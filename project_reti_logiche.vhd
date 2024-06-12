@@ -168,7 +168,6 @@ begin
           if last_credibility /= zero_credibility then
             last_credibility_next <= std_logic_vector(unsigned(last_credibility) - 1);
           else
-            -- TODO maybe the else is not needed (check if removing it generates latches)
             last_credibility_next <= zero_credibility;
           end if;
 
