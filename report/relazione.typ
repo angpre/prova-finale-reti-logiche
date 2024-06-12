@@ -45,7 +45,7 @@
     }
   }
 }
-#set heading(numbering: clean_numbering("1.", "a.", "i.", "1"))
+#set heading(numbering: clean_numbering("1.", "a.", "i.", "1."))
 
 // Paragraph styling
 #set par(justify: true)
@@ -114,7 +114,7 @@ entity ram is
     );
 end ram;
 ```
-Sono specificate, nella tabella seguente, le corrispondeze tra segnali della memoria RAM e del componente
+Sono specificate, nella tabella seguente, le corrispondenze tra segnali della memoria RAM e del componente
 
 #align(center,
 table(
@@ -170,7 +170,7 @@ Il funzionamento ad alto livello del componente può essere diviso in tre fasi:
   [*end*], no-number,
 )
 )
-3. *Terminazione*: \ Il componente segnala la fine dell'esecuzione ponendo il segnale `o_done` alto e rimanendo in attesa di osservare che il segnale `i_start` diventi $0$. Infine, il segnale `o_done` assume valore $0$ e la computazione è considerata terminata.
+3. *Terminazione*: \ Il componente segnala la fine dell'esecuzione ponendo il segnale `o_done` alto e rimanendo in attesa di osservare che il segnale `i_start` diventi $0$. Infine, il segnale `o_done` assume valore $0$ e la computazione viene considerata terminata.
 
 == Esempio di funzionamento <example>
 
@@ -183,7 +183,7 @@ Siano dati in ingresso `i_k`$=37$, `i_add`$=1158$ e  sia la situazione iniziale 
   image("EXAMPLE.png"),
   [],
   [
-    Il primo dato letto ha valore zero. Non avendo letto nessun altro dato valido precedentemente, il valore rimane inalterato e la credibilità assegnata sarà $0$.
+    Il primo dato letto ha valore zero. Non avendo letto alcun dato valido precedentemente, il valore rimane inalterato e la credibilità assegnata sarà $0$.
 
     Il dato successivo è $13$, essendo non nullo riceve credibilità massima ($31$) e dato e credibilità vengono memorizzati come ultimi validi.
 
@@ -199,18 +199,20 @@ Siano dati in ingresso `i_k`$=37$, `i_add`$=1158$ e  sia la situazione iniziale 
 
 Si noti che, nonostante le porzioni di memoria che ospitano la credibilità abbiano valore $0$ sia in questo esempio sia in tutti i test forniti con la specifica, non si tratta del caso generale. È quindi necessario, qualora non si abbia la certezza che sia presente uno zero, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a $0$ stesso.
 
-La lettura della generica cella di memoria che ospiterà la credibilità al fine di verificare che abbia valore nullo, seppur possibile, è un'operazione più costosta (un ciclo di clock in più) rispetto alla semplice sovrascrittura.
+La lettura della generica cella di memoria che ospiterà la credibilità al fine di verificare che abbia valore nullo, seppur possibile, è un'operazione più costosa (un ciclo di clock in più) rispetto alla semplice sovrascrittura.
+
+#pagebreak()
 
 = Architettura
 
 // 2. Architettura: Lobiettivo è quello di riportare uno schema funzionale che consenta di valutare come la rete sia stata progettata (schema in moduli... un bel disegno chiaro... i segnali i bus, il/i clock, reset... i segnali interni che interconnettono i moduli, ...):
 
-Data la semplicità del componente, non si è ritenuto necessario dividerlo in più entities. Il risultato finale è una singola entity, la cui architettura realizza una macchina a stati tramite due processi.
+Data la semplicità del componente, non si è ritenuto necessario dividerlo in più entities. Il risultato finale è una singola entity, la cui architettura realizza una macchina a stati mediante due processi.
 == Macchina a stati finiti (entity project_reti_logiche)
 // a. Modulo 1 (la descrizione - sottoparagrafo - di ogni modulo e la scelta implementativa - per esempio, il modulo ... @ una collezione di process che implementano la macchina a stati e la parte di registri, .... La macchina a stati, il cui schema in termini di diagramma degli stati, ha 8 stati. Il primo rappresenta .... e svolge le operazioni di ... il secondo... etc etc)
 
 La macchina a stati finiti dell'architecture implementata è una macchina di Mealy.
-Internamente, le transizioni della FSM sono sul fronte di salita del clock.
+Internamente, le transizioni della FSM avvengono sul fronte di salita del clock.
 È composta da 6 stati, sono quindi necessari 3 Flip Flops per memorizzare lo stato corrente.
 
 #figure(
@@ -262,7 +264,9 @@ In questa sezione è presentata una descrizione delle funzioni svolte dal compon
 
 === Segnali
 
-La macchina a stati usa diversi segnali interni e per ognuno è presente un segnale con nome simile più l'aggiunta della parola _next_; la scelta progettuale di avere segnali "doppi" è stata fatta nell'ottica di avere solo Flip Flops come registri e nessun Latch.
+La macchina a stati usa diversi segnali interni e per ognuno è presente un segnale con nome simile più l'aggiunta della parola _next_. La scelta progettuale di avere segnali "doppi" è stata fatta nell'ottica di avere solo Flip Flops come registri e nessun Latch.
+
+Sono qui elencati i vari segnali con una brevissima descrizione:
 
 - Segnali per la gestione dello stato FSM, dove `state_t` è un tipo che memorizza uno dei possibili stati validi
   - *`current_state`* `: state_t`
@@ -291,18 +295,25 @@ Sono state inoltre dichiarate costanti per evitare ripetizioni nel codice:
 
 === Processi
 
-==== Processo 1: Reset asincrono e clock
+La FSM è implementata con soli due processi
 
-Il primo processo della FSM ha due funzioni:
-- *Gestione del reset asincrono*: quando il segnale i_rst è alto, al registro contenente lo stato corrente viene assegnato lo stato di IDLE.
-- *Transizioni*: se siamo sul fronte di salita del segnale i_clk allora i registri contententi i valori correnti vengo assegnati i nuovi valori. Questa operazione aggiorna anche lo stato corrente che, essendo presente nella sensitivity list del Processo 2, lo "sveglia".
+==== Reset asincrono e clock
 
-==== Processo 2: Delta/Lambda
+Il primo processo svolge due funzioni:
 
-Questo processo corrisponde alle funzioni $delta$ e $lambda$ della FSM di Mealy. Si occupa quindi di stabilire quale sarà il prossimo stato e quali valori fornire in output (sia verso la memoria, sia verso l'utilizzatore del modulo).
++ *Gestione del reset asincrono* \
+  Quando il segnale `i_rst` è alto, al registro contenente lo stato corrente viene assegnato lo stato `STATE_IDLE`.
++ *Transizioni* \
+  In presenza del fronte di salita del segnale `i_clk` allora ai segnali contententi i valori correnti vengo assegnati i segnali _next_. Questa operazione aggiorna anche lo stato corrente che, essendo presente nella sensitivity list del Processo 2, lo "sveglia".
+
+==== Delta/Lambda
+
+Il secondo processo realizza le funzioni $delta$ e $lambda$ della FSM di Mealy. Si occupa quindi di stabilire quale sarà il prossimo stato, il valore dei segnali interni e quali valori fornire in output (sia verso la memoria, sia verso l'utilizzatore del modulo).
 
 // == Modulo 2
 // // b. Modulo ...
+
+#pagebreak()
 
 = Risultati sperimentali
 
@@ -346,14 +357,15 @@ table(
 Notiamo che il componente usa:
 - *51 Flip Flops* (0.02%), tutti e soli i previsti. Nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti: una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di flip flop, è quella di salvare $k$ e decrementarlo.
 - *78 Look-Up Tables* (0.06%)
-- *0 Latches*, risultato ottenuto grazie ad opportune scelte progettuali descritte precedentemente
+- *0 Latches*, risultato ottenuto grazie ad opportune scelte progettuali descritte precedentemente.
+
 La percentuale di occupazione degli elementi disponibili è molto bassa: la logica implementata è molto semplice e non necessita di ampi spazi di memoria o complesse operazioni.
 
 == Simulazioni
 
 // b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine è mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
 
-Il componente è stato sottoposto sia testbeches scritti a mano per verificare il suo comportamento nei vari in edge-cases, sia a testbenches generati automaticamente per controllare il corretto funzionamento su vari range di memoria.
+Il componente è stato sottoposto sia testbeches scritti a mano per verificare il suo comportamento in presenza dei vari edge-cases, sia a testbenches generati automaticamente per controllare il corretto funzionamento su vari range di memoria.
 
 === Testbench fornito ed esempi specifica
 // i. test bench 1 (cosa fa e perché lo fa e cosa verifica; per esempio controlla una condizione limite)
@@ -365,18 +377,22 @@ Inoltre, sono stati scritti test per controllare che il componente funzioni corr
 // ii. test bench 2 (....)
 Questo testbench è stato scritto per verificare il corretto funzionamento del componente in esecuzioni successive senza reset intermedi.
 
+Ciò ha permesso di controllare che i segnali interni vengano correttamente ripristinati quando inizia una nuova esecuzione (`i_start` pari a 1).
+
 === Dato iniziale nullo
 // iii.
-È stato necessario verificare che il componente funzionasse correttamente in condizioni simili a quelle dell'esempuo di funzionamento (@example)
+Si è testato il corretto funzionamento in condizioni simili a quelle dell'esempuo di funzionamento (@example).
+
+=== Credibilità nulla
+Con questo testbench si è voluto testare che la credibilità, qualora sia stata decrementata fino a zero, rimanga pari a zero se i nuovi dati letti abbiano valore nullo. 
 
 === Reset durante la computazione
-Grazie a questo test si è mostrato il funzionamento del componente quando il segnale di reset viene portato alto durante una computazione.
+Grazie a questo test si è mostrato il funzionamento del componente quando il segnale di reset viene portato alto durante una computazione. Il test è stato utile per rimuovere problemi dovuti ad un'errata inizializzazione dei segnali.
 
 === Reset durante accesso a memoria
 Come nel testbench precedente, si è verificato il funzionamento a seguito di reset, questa volta durante una lettura e poi una scrittura in memoria.
 
-=== Credibilità a zero
-Con questo testbench si è voluto testare che la credibilità, qualora sia stata decrementata fino a zero, rimanga pari a zero se i nuovi dati letti abbiano valore nullo. 
+#pagebreak()
 
 = Conclusioni
 // 4. Conclusioni (mezza pagina max)
@@ -384,7 +400,6 @@ Il componente, oltre a rispettare la specifica, è stato implementato in modo ef
 
 Oltre a funzionare nelle simulazioni Behavioral e Post-Synthesis Functional, il componente ha il comportamento richiesto anche quando viene testato in simulazioni Post-Synthesis Timing.
 
-Come già anticipato, un possibile miglioramento per ridurre l'uso di flip flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Tables per svolgere l'operazione di decremento del $k$ (memorizzato al posto di salvare last_address).
-Questo permetterebbe anche di eliminare il segnale `last_address_next`.
+Come già anticipato, un possibile miglioramento per ridurre l'uso di flip flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Tables per svolgere l'operazione di decremento del $k$ (memorizzato al posto di salvare last_address). Questo permetterebbe anche di eliminare il segnale `last_address_next`.
 
 Un ultimo miglioramento, che ridurrebbe il numero di registri ulteriormente, è salvare la credibilità utilizzando un segnale di tipo `std_logic_vector(5 downto 0)` invece del segnale a 8 bit utilizzato nell'implementazione corrente del componente. 
