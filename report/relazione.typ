@@ -45,10 +45,17 @@
     }
   }
 }
-#set heading(numbering: clean_numbering("1.", "a.", "i."))
+#set heading(numbering: clean_numbering("1.", "a.", "i.", "1"))
 
 // Paragraph styling
 #set par(justify: true)
+
+// List styling
+#show list: it => pad(left: 1em, {
+  set list(marker: style(styles => 
+    place(dx: -measure([•], styles).width, [•])))
+  it
+})
 
 // Polimi logo
 #image("logo_polimi_ing_indinf.svg", width: 70%)
@@ -80,14 +87,14 @@ align(right, text(11pt,
 = Introduzione
 // 1. Introduzione: L'obiettivo non è la "copia" della specifica ma una elaborazione, con un esempio e, se é possibile, un disegno e/o una immagine, che spieghi cosa succede;
 
-Il componente realizzato elabora una sequenza di dati presenti in una memoria RAM sostituendo alle celle con valore $0$, interpretabili come valori assenti, l'ultimo dato con valore valido, con credibilità opportunamente decrementata.
+Il componente realizzato elabora una sequenza di dati presenti in una memoria RAM sostituendo alle celle con valore $0$, interpretabili come valori assenti, l'ultimo dato letto con valore valido (non zero), con credibilità opportunamente decrementata.
 
 #figure(
   caption: "Rappresentazione grafica dell'interfaccia del componente",
   image("project_reti_logiche.svg")
 )
 
-Un esempio di applicazione è la correzione di letture assenti di sensori, solitamente segnalate tramite il valore $0$.
+Un esempio di possibile applicazione è la correzione di letture di sensori. Le letture assenti sono spesso segnalate memorizzando il valore $0$ in memoria.
 
 Nei paragrafi successivi è fornita una descrizione sia dei segnali necessari per il corretto funzionamento, sia del funzionamento del componente in maggior dettaglio.
 
@@ -107,41 +114,40 @@ entity ram is
     );
 end ram;
 ```
-Specifichiamo, nella tabella seguente, le corrispondeze tra segnali della memoria RAM e del componente:
+Sono specificate, nella tabella seguente, le corrispondeze tra segnali della memoria RAM e del componente
 
 #align(center,
 table(
   columns: 4,
   [], [RAM (segnale)], [Componente (segnale)], [Dimensione],
-  [Enable],[en],[o_mem_en],[1 bit],
-  [Write enable],[we],[o_mem_we],[1 bit],
-  [Address],[addr],[o_mem_addr],[16 bits],
-  [Data in],[di],[i_mem_data],[8 bits],
-  [Data out],[do],[o_mem_data],[8 bits],
+  [Enable],[`en`],[`o_mem_en`],[1 bit],
+  [Write enable],[`we`],[`o_mem_we`],[1 bit],
+  [Address],[`addr`],[`o_mem_addr`],[16 bits],
+  [Data in],[`di`],[`i_mem_data`],[8 bits],
+  [Data out],[`do`],[`o_mem_data`],[8 bits],
 ))
 
-Ricordiamo infine che RAM e componente devono condividere lo stesso segnale di clock.
+Bisogna ricordare, infine, che RAM e componente devono condividere lo stesso segnale di clock.
 
 == Collegamento all'utilizzatore
 
-L'utilizzatore del componente qui specificato dovrà fornire come segnali di ingresso:
-- *i_clk*: segnale di clock
-- *i_rst*: reset asincrono del componente
-- *i_start*: segnale di avvio
-- *i_add*: indirizzo iniziale
-- *i_k*: numero di dati da processare
-Per segnalare la fine di una computazione, il componente fa uso del segnale *o_done*.
+L'utilizzatore dovrà fornire al componente i seguenti segnali:
+- *`i_clk`*: segnale di clock
+- *`i_rst`*: reset asincrono del componente
+- *`i_start`*: segnale di avvio
+- *`i_add`*: indirizzo iniziale
+- *`i_k`*: numero di dati da processare
+
+Il termine della computazione, invece, sarà sengnalato dal componente all'utilizzatore tramite il segnale *`o_done`*.
 
 == Descrizione funzionamento
 
-Possiamo descrivere il funzionamento dividendolo in tre fasi:
+Il funzionamento ad alto livello del componente può essere diviso in tre fasi:
 
-1. *Inizializzazione*: vengono forniti in input l'indirizzo iniziale, il numero di coppie (valore + credibilità) di celle da processare e un segnale di start; questa fase segue un eventuale reset o il termine di un'esecuzione precedente.
-2. *Aggiornamento*: Il modulo inizia a processare i dati in memoria, aggiornandoli come descritto dal seguente pseudocodice
-
-#grid(
-  columns: (0.05fr, 1fr),
-  [],
+1. *Inizializzazione*:\ Sono forniti in input l'indirizzo iniziale, il numero di parole da processare e il segnale di start. Questa fase deve seguire un reset asincrono o la corretta terminazione di un'esecuzione precedente.
+2. *Aggiornamento*: \ Il modulo processa i dati in memoria, aggiornandoli e associando loro un valore di credibilità, come descritto in dettaglio dal seguente pseudocodice
+#pad(
+  left: 2em,
   pseudocode(
   no-number,
   [*input:* indirizzo di partenza $a$, numero di iterazioni $k$], no-number,
@@ -164,35 +170,36 @@ Possiamo descrivere il funzionamento dividendolo in tre fasi:
   [*end*], no-number,
 )
 )
+3. *Terminazione*: \ Il componente segnala la fine dell'esecuzione ponendo il segnale `o_done` alto e rimanendo in attesa di osservare che il segnale `i_start` diventi $0$. Infine, il segnale `o_done` assume valore $0$ e la computazione è considerata terminata.
 
-3. *Terminazione*: la fine della fase di aggiornamento è seguita da una segnalazione da parte del componente: _o_done_ viene posto alto e si rimane in attesa di osservare basso il segnale _i_start_.
+== Esempio di funzionamento <example>
 
-== Esempio funzionamento <example>
+In questa sezione viene presentato il risultato di una computazione in termini di aggiornamento della memoria. È inoltre introdotto uno dei possibili edge-cases: l'inizio di una sequenza con dato zero.
 
-In questa sezione mostriamo il risultato di una computazione, introducendo anche uno dei possibili edge-cases, ovvero l'inizio di una sequenza con uno zero.
-
-Siano dati in ingresso $"i_k"=37$ e $"i_add"=1158$; sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono stati evidenziati in grassetto per distinguerli dalla credibilità):
+Siano dati in ingresso `i_k`$=37$, `i_add`$=1158$ e  sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono evidenziati in grassetto)
 
 #grid(
   columns: (1fr, 0.1fr, 1fr),
   image("EXAMPLE.png"),
   [],
   [
-    Il primo dato letto è uno zero e, non avendo letto nessun altro dato prima il suo valore rimane inalterato e la sua credibilità viene posta a zero.
+    Il primo dato letto ha valore zero. Non avendo letto nessun altro dato valido precedentemente, il valore rimane inalterato e la credibilità assegnata sarà $0$.
 
-    Il dato successivo è pari a $13$, è quindi non nullo e possiamo assegnarli credibilità massima ($31$).
+    Il dato successivo è $13$, essendo non nullo riceve credibilità massima ($31$) e dato e credibilità vengono memorizzati come ultimi validi.
 
-    Troviamo ora una serie di dati pari a $0$, ma avendo come ultimo dato salvato $13$ possiamo riscriverlo, associandolo ogni volta a una credibilità decrementa rispetto l'ultima utilizzata.
+    Segue una serie di dati nulli. Avendo salvato $13$ come ultimo dato valido possiamo sovrascriverli, è associato ad ognuno di loro credibilità decrementata rispetto al precedente.
 
-    Quando la credibilità è stata già decrementata a $0$, se il dato nella cella successiva è nullo dobbiamo assegnarli credibilità nulla non potendola decrementare ulteriormente.
+    Quando la credibilità è stata già decrementata a $0$, se il dato nella cella successiva è nullo riceve credibilità nulla, non potendola decrementare ulteriormente.
 
-    Infine incontriamo un nuovo dato diverso da $0$, $111$, e gli assegnamo credibilità $31$. Il dato successivo è pari a $0$ e quindi, come fatto precedentemente, lo sovrascriviamo con $111$ (l'ultimo dato valido) e gli assegnamo credibilità decrementata pari a $30$.
+    Troviamo un dato diverso da zero, $111$, e quindi riceve credibilità $31$. Il dato successivo è invece pari a $0$ e quindi viene sovrascritto con $111$ e riceve credibilità decrementata ($30$) rispetto all'ultima memorizzata.
   ]
 )
 
 == Osservazioni
 
-Notiamo che, nonostante le celle che ospitano la credibilità abbiano valore $0$ sia in questo esempio sia in tutti i test forniti nella specifica, non è il caso generale. È quindi necessario, qualora non si abbia la certezza che sia presente uno $0$, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a $0$. Controllare la cella che ospiterà la credibilità aggiornata per verificare che abbia valore nullo, seppur possibile, è un'operazione più costosta (un ciclo di clock in più) rispetto alla semplice sovrascrittura.
+Si noti che, nonostante le porzioni di memoria che ospitano la credibilità abbiano valore $0$ sia in questo esempio sia in tutti i test forniti con la specifica, non si tratta del caso generale. È quindi necessario, qualora non si abbia la certezza che sia presente uno zero, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a $0$ stesso.
+
+La lettura della generica cella di memoria che ospiterà la credibilità al fine di verificare che abbia valore nullo, seppur possibile, è un'operazione più costosta (un ciclo di clock in più) rispetto alla semplice sovrascrittura.
 
 = Architettura
 
@@ -204,7 +211,7 @@ Data la semplicità del componente, non si è ritenuto necessario dividerlo in p
 
 La macchina a stati finiti dell'architecture implementata è una macchina di Mealy.
 Internamente, le transizioni della FSM sono sul fronte di salita del clock.
-È composta da 6 stati, sono quindi necessari 3 flip flop per memorizzare lo stato corrente.
+È composta da 6 stati, sono quindi necessari 3 Flip Flops per memorizzare lo stato corrente.
 
 #figure(
   caption: "Rappresentazione ad alto livello della FSM implementata",
@@ -225,95 +232,72 @@ Internamente, le transizioni della FSM sono sul fronte di salita del clock.
     },
     columns: 2,
     [_Nome stato implementato_], [_Abbreviazione_],
-    [STATE_IDLE], [IDLE],
-    [STATE_ACTIVE], [ACTIVE],
-    [STATE_WAIT_START_LOW], [WAIT_LOW],
-    [STATE_WAIT_WORD_READ], [WAIT_RD],
-    [STATE_ZERO_WORD_CHECK_AND_WRITE], [CHK_ZERO],
-    [STATE_WRITE_DECREMENTED_CRED], [WR_DECR],
+    [`STATE_IDLE`], [`IDLE`],
+    [`STATE_ACTIVE`], [`ACTIVE`],
+    [`STATE_WAIT_START_LOW`], [`WAIT_LOW`],
+    [`STATE_WAIT_WORD_READ`], [`WAIT_RD`],
+    [`STATE_ZERO_WORD_CHECK_AND_WRITE`], [`CHK_ZERO`],
+    [`STATE_WRITE_DECREMENTED_CRED`], [`WR_DECR`],
   )
 )
 
+#v(15pt)
 
-Descriviamo brevemente le azioni svolte dal componente quando si trova nei vari stati:
+=== Stati
 
-- *STATE_IDLE*: \
-  La FSM  si trova in questo stato quando è in attesa di iniziare una nuova computazione (quando aspetta che il segnale i_start pari a 1). È possibile in STATE_IDLE sia a seguito del reset asincrono sia a seguito della fine di una computazione.
-- *STATE_ACTIVE*: \
-  In questo stato viene deciso se bisogna processare un nuovo indirizzo di memoria oppure teminare la computazione.
-  Se l'indirizzo corrente è da processare, si preparano i segnali di memoria per leggere il dato all'indirizzo corrente, altrimenti ci si sposta nello stato STATE_WAIT_START_LOW.
-- *STATE_WAIT_START_LOW*: \
-  Arriviamo in questo stato quando gli indirizzi da processare sono finiti, la macchina lo segnala all'utilizzatore ponendo il segnale o_done alto e aspetta che i_start venga abbassato, evento seguito dal ritorno nello stato di STATE_IDLE.
-- *STATE_WAIT_WORD_READ*: \
-  Questo stato serve per permettere alla memoria di fornire il dato richiesto negli stati precedenti; infatti, come stabilito nella specifica, la memoria ha un delay di 2 nanosecondi, solo al termine dei quali può fornire il dato richiesto.
-- *STATE_ZERO_WORD_CHECK_AND_WRITE*: \
-  Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato di scrittura della credibilità decrementata, altrimenti, scriviamo nell'indirizzo successivo in RAM il massimo valore di credibilità (31) e torniamo nello stato STATE_ACTIVE.
-- *STATE_WRITE_DECREMENTED_CRED*: \
-  Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria nello stato STATE_ZERO_WORD_CHECK_AND_WRITE. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
+In questa sezione è presentata una descrizione delle funzioni svolte dal componente in ogni stato:
+- *`STATE_IDLE`* \
+  La FSM  si trova in questo stato quando è in attesa di iniziare una nuova computazione (sta aspettando che `i_start` diventi pari a 1). È possibile arrivare in `STATE_IDLE` sia a seguito del reset asincrono sia a seguito della fine di una computazione.
+- *`STATE_ACTIVE`* \
+  In questo stato viene deciso se bisogna processare un nuovo indirizzo di memoria oppure porre temine alla computazione.
+  Se l'indirizzo corrente è da processare, si preparano i segnali di memoria per leggere il dato memorizzato allo stesso indirizzo, altrimenti ci si sposta nello stato `STATE_WAIT_START_LOW`.
+- *`STATE_WAIT_START_LOW`* \
+  Si arriva in questo stato quando non ci sono indirizzi da processare rimanenti; la FSM lo segnala all'utilizzatore ponendo il segnale `o_done` alto e aspetta che `i_start` diventi 0, tornando subito dopo nello stato di `STATE_IDLE`.
+- *`STATE_WAIT_WORD_READ`* \
+  Questo stato serve per permettere alla memoria di fornire il dato richiesto negli stati precedenti; infatti, come stabilito nella specifica, la memoria ha un delay di 2 nanosecondi in lettura, solo al termine dei quali può fornire il dato richiesto.
+- *`STATE_ZERO_WORD_CHECK_AND_WRITE`* \
+  Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato `STATE_WRITE_DECREMENTED_CRED`; altrimenti, viene salvato nell'indirizzo successivo in RAM il massimo valore di credibilità (31), tornando poi nello stato `STATE_ACTIVE`.
+- *`STATE_WRITE_DECREMENTED_CRED`* \
+  Si è in questo stato a seguito della lettura un valore pari a 0 in memoria nello stato `STATE_ZERO_WORD_CHECK_AND_WRITE`. Viene scritto in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
 
-// TODO descrivere segnali interni
-La macchina a stati usa diversi segnali interni e ad ogni segnale è associato un segnale con lo stesso nome seguito da _next_; questa scelta progettuale è stata fatta per avere solo Flip-Flops come registri e nessun Latch.
+=== Segnali
 
-- Gestione dello stato della macchina a stati
-  - *next_state*    : state_t;
-  - *current_state* : state_t;
-- Memorizzazione dell'indirizzo corrente
-  - *current_address*      : std_logic_vector(15 downto 0);
-  - *current_address_next* : std_logic_vector(15 downto 0);
-- Memorizzazione dell'indirizzo finale
-  - *end_address*      : std_logic_vector(15 downto 0);
-  - *end_address_next* : std_logic_vector(15 downto 0);
+La macchina a stati usa diversi segnali interni e per ognuno è presente un segnale con nome simile più l'aggiunta della parola _next_; la scelta progettuale di avere segnali "doppi" è stata fatta nell'ottica di avere solo Flip Flops come registri e nessun Latch.
+
+- Segnali per la gestione dello stato FSM, dove `state_t` è un tipo che memorizza uno dei possibili stati validi
+  - *`current_state`* `: state_t`
+  - *`next_state`*    `: state_t`
+
+- Memorizzazione dell'indirizzo corrente (da 16 bits)
+  - *`current_address`*      `: std_logic_vector(15 downto 0)`
+  - *`current_address_next`* `: std_logic_vector(15 downto 0)`
+
+- Memorizzazione dell'indirizzo finale (anche questo a 16 bits)
+  - *`end_address`*      `: std_logic_vector(15 downto 0)`
+  - *`end_address_next`* `: std_logic_vector(15 downto 0)`
+
 - Ultima parola letta diversa da zero (o zero stesso a seguito del reset asincrono)
-  - *last_word*      : std_logic_vector(7 downto 0);
-  - *last_word_next* : std_logic_vector(7 downto 0);
-- Credibilità corrente (pari a zero a seguito del reset asincrono, 31 a seguito della lettura di una parola non nulla)
-  - *last_credibility*      : std_logic_vector(7 downto 0);
-  - *last_credibility_next* : std_logic_vector(7 downto 0);
+  - *`last_word`*      `: std_logic_vector(7 downto 0)`
+  - *`last_word_next`* `: std_logic_vector(7 downto 0)`
+
+- Credibilità corrente (pari a zero a seguito del reset asincrono, con valore massimo 31 e minimo 0)
+
+  - *`last_credibility`*      `: std_logic_vector(7 downto 0)`
+  - *`last_credibility_next`* `: std_logic_vector(7 downto 0)`
 
 Sono state inoltre dichiarate costanti per evitare ripetizioni nel codice:
-- *zero_word* e  *zero_credibility* con valore zero.
-- *max_credibility*  con valore 31 (credibilità massima).
+- *`zero_word`* e  *`zero_credibility`* con valore zero
+- *`max_credibility`*  con valore 31 (credibilità massima)
 
-// #finite.automaton(
-//   style: (
-//     state: (
-//       stroke: 1.5pt + polimiColor,
-//       radius: 0.8,
-//     ),
-//     transition: (
-//     )
-//   ),
-//   (
-//     IDLE: (ACTIVE: "i_start = 1"),
-//     ACTIVE: (WAIT_LOW: "processed all addresses", WAIT_RD: "addresses to process left"),
-//     WAIT_LOW: (IDLE: "i_start = 0"),
-//     WAIT_RD: (CHK_ZERO: ""),
-//     CHK_ZERO: (WR_DECR: "read word is 0", ACTIVE: "read word is non-zero"),
-//     WR_DECR: (ACTIVE: ""),
-//   ),
-//   layout: finite.layout.custom.with(positions:(..) =>
-//     (
-//       IDLE: (0,12),
-//       ACTIVE: (0,9),
-//       WAIT_LOW: (3,9),
-//       WAIT_RD: (0,6),
-//       CHK_ZERO: (0,3),
-//       WR_DECR: (0,0),
-//     )
-//   ),
-// )
+=== Processi
 
-// #figure(caption: "FSM del componente (con opportune semplificazioni)",
-//   diagraph.render(width: 80%, read("./fsm.dot"))
-// )
-
-=== Processo 1: Reset asincrono e clock
+==== Processo 1: Reset asincrono e clock
 
 Il primo processo della FSM ha due funzioni:
 - *Gestione del reset asincrono*: quando il segnale i_rst è alto, al registro contenente lo stato corrente viene assegnato lo stato di IDLE.
 - *Transizioni*: se siamo sul fronte di salita del segnale i_clk allora i registri contententi i valori correnti vengo assegnati i nuovi valori. Questa operazione aggiorna anche lo stato corrente che, essendo presente nella sensitivity list del Processo 2, lo "sveglia".
 
-=== Processo 2: Delta/Lambda
+==== Processo 2: Delta/Lambda
 
 Questo processo corrisponde alle funzioni $delta$ e $lambda$ della FSM di Mealy. Si occupa quindi di stabilire quale sarà il prossimo stato e quali valori fornire in output (sia verso la memoria, sia verso l'utilizzatore del modulo).
 
@@ -360,9 +344,9 @@ table(
 ))
 
 Notiamo che il componente usa:
-- *51 flip flop* (0.02%), tutti e soli i previsti. Nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti: una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di flip flop, è quella di salvare $k$ e decrementarlo.
-- *78 look-up tables* (0.06%)
-- *0 latches*, risultato ottenuto grazie ad opportune scelte progettuali
+- *51 Flip Flops* (0.02%), tutti e soli i previsti. Nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti: una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di flip flop, è quella di salvare $k$ e decrementarlo.
+- *78 Look-Up Tables* (0.06%)
+- *0 Latches*, risultato ottenuto grazie ad opportune scelte progettuali descritte precedentemente
 La percentuale di occupazione degli elementi disponibili è molto bassa: la logica implementata è molto semplice e non necessita di ampi spazi di memoria o complesse operazioni.
 
 == Simulazioni
@@ -371,9 +355,11 @@ La percentuale di occupazione degli elementi disponibili è molto bassa: la logi
 
 Il componente è stato sottoposto sia testbeches scritti a mano per verificare il suo comportamento nei vari in edge-cases, sia a testbenches generati automaticamente per controllare il corretto funzionamento su vari range di memoria.
 
-=== Testbench ufficiale
+=== Testbench fornito ed esempi specifica
 // i. test bench 1 (cosa fa e perché lo fa e cosa verifica; per esempio controlla una condizione limite)
-Il primo testbench ad essere stato provato è quello presente nei materiali per il progetto, funziona correttamente e rispetta i vincoli di clock. Inoltre, il componente funziona correttamente con tutti gli altri esempi forniti nella specifica.
+Il primo testbench ad essere stato provato è quello presente nei materiali per il progetto, funziona correttamente e rispetta i vincoli di clock.
+
+Inoltre, sono stati scritti test per controllare che il componente funzioni correttamente anche con tutti gli altri esempi forniti nella specifica.
 
 === Start multipli
 // ii. test bench 2 (....)
@@ -399,3 +385,6 @@ Il componente, oltre a rispettare la specifica, è stato implementato in modo ef
 Oltre a funzionare nelle simulazioni Behavioral e Post-Synthesis Functional, il componente ha il comportamento richiesto anche quando viene testato in simulazioni Post-Synthesis Timing.
 
 Come già anticipato, un possibile miglioramento per ridurre l'uso di flip flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Tables per svolgere l'operazione di decremento del $k$ (memorizzato al posto di salvare last_address).
+Questo permetterebbe anche di eliminare il segnale `last_address_next`.
+
+Un ultimo miglioramento, che ridurrebbe il numero di registri ulteriormente, è salvare la credibilità utilizzando un segnale di tipo `std_logic_vector(5 downto 0)` invece del segnale a 8 bit utilizzato nell'implementazione corrente del componente. 
