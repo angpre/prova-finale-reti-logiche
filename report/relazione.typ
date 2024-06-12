@@ -171,7 +171,7 @@ Possiamo descrivere il funzionamento dividendolo in tre fasi:
 
 In questa sezione mostriamo il risultato di una computazione, introducendo anche uno dei possibili edge-cases, ovvero l'inizio di una sequenza con uno zero.
 
-Siano dati in ingresso $"i_k"=37$ e $"i_add"=157$; sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono stati evidenziati in grassetto per distinguerli dalla credibilità):
+Siano dati in ingresso $"i_k"=37$ e $"i_add"=1158$; sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono stati evidenziati in grassetto per distinguerli dalla credibilità):
 
 #grid(
   columns: (1fr, 0.1fr, 1fr),
@@ -210,7 +210,7 @@ Internamente, le transizioni della FSM sono sul fronte di salita del clock.
   caption: "Rappresentazione ad alto livello della FSM implementata",
   // TODO fare la freccia i_mem_data = 0 tonda
   image(
-    "./FSM-high-res.png",
+    "./FSM.png",
   )
 )
 
@@ -377,4 +377,4 @@ Il componente, oltre a rispettare la specifica, è stato implementato in modo ef
 
 Oltre a funzionare nelle simulazioni Behavioral e Post-Synthesis Functional, il componente ha il comportamento richiesto anche quando viene testato in simulazioni Post-Synthesis Timing.
 
-Come già anticipato, un possibile miglioramento per ridurre l'uso di flip flop è quello di cambiare la condizione di fine della computazione.
+Come già anticipato, un possibile miglioramento per ridurre l'uso di flip flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Tables per svolgere l'operazione di decremento del $k$ (memorizzato al posto di salvare last_address).
