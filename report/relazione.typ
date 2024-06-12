@@ -252,6 +252,27 @@ Descriviamo brevemente le azioni svolte dal componente quando si trova nei vari 
   Siamo in questo stato se abbiamo letto un valore pari a 0 in memoria nello stato STATE_ZERO_WORD_CHECK_AND_WRITE. Scriviamo in memoria quindi un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
 
 // TODO descrivere segnali interni
+La macchina a stati usa diversi segnali interni e ad ogni segnale è associato un segnale con lo stesso nome seguito da _next_; questa scelta progettuale è stata fatta per avere solo Flip-Flops come registri e nessun Latch.
+
+- Gestione dello stato della macchina a stati
+  - *next_state*    : state_t;
+  - *current_state* : state_t;
+- Memorizzazione dell'indirizzo corrente
+  - *current_address*      : std_logic_vector(15 downto 0);
+  - *current_address_next* : std_logic_vector(15 downto 0);
+- Memorizzazione dell'indirizzo finale
+  - *end_address*      : std_logic_vector(15 downto 0);
+  - *end_address_next* : std_logic_vector(15 downto 0);
+- Ultima parola letta diversa da zero (o zero stesso a seguito del reset asincrono)
+  - *last_word*      : std_logic_vector(7 downto 0);
+  - *last_word_next* : std_logic_vector(7 downto 0);
+- Credibilità corrente (pari a zero a seguito del reset asincrono, 31 a seguito della lettura di una parola non nulla)
+  - *last_credibility*      : std_logic_vector(7 downto 0);
+  - *last_credibility_next* : std_logic_vector(7 downto 0);
+
+Sono state inoltre dichiarate costanti per evitare ripetizioni nel codice:
+- *zero_word* e  *zero_credibility* con valore zero.
+- *max_credibility*  con valore 31 (credibilità massima).
 
 // #finite.automaton(
 //   style: (
