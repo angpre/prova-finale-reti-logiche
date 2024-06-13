@@ -96,7 +96,7 @@ Il componente realizzato elabora una sequenza di dati presenti in una memoria RA
 
 Un esempio di possibile applicazione è la correzione di letture di sensori. Le letture assenti sono spesso segnalate memorizzando il valore $0$ in memoria.
 
-Nei paragrafi successivi è fornita una descrizione sia dei segnali necessari per il corretto funzionamento, sia del funzionamento del componente in maggior dettaglio.
+Nei paragrafi successivi è fornita sia una descrizione dei segnali necessari per il corretto funzionamento, sia una descrizione in maggior dettaglio del componente stesso.
 
 == Collegamento a memoria RAM
 
@@ -384,7 +384,7 @@ Ciò ha permesso di controllare che i segnali interni vengano correttamente ripr
 Si è testato il corretto funzionamento in condizioni simili a quelle dell'esempuo di funzionamento (@example).
 
 === Credibilità nulla
-Con questo testbench si è voluto testare che la credibilità, qualora sia stata decrementata fino a zero, rimanga pari a zero se i nuovi dati letti abbiano valore nullo. 
+Con questo testbench si è voluto testare che la credibilità, qualora sia stata decrementata fino a zero, rimanga pari a zero se i nuovi dati letti hanno valore nullo. 
 
 === Reset durante la computazione
 Grazie a questo test si è mostrato il funzionamento del componente quando il segnale di reset viene portato alto durante una computazione. Il test è stato utile per rimuovere problemi dovuti ad un'errata inizializzazione dei segnali.
