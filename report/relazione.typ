@@ -268,7 +268,7 @@ In questa sezione è presentata una descrizione delle funzioni svolte dal compon
   Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato `STATE_WRITE_DECREMENTED_CRED`; altrimenti, all'indirizzo successivo della RAM viene salvato il valore massimo di credibilità (31), tornando poi nello stato `STATE_ACTIVE`.
 
 - *`STATE_WRITE_DECREMENTED_CRED`* \
-  Si è in questo stato a seguito della lettura un valore pari a 0 in memoria nello stato `STATE_ZERO_WORD_CHECK_AND_WRITE`. Viene scritto in RAM un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso).
+  Si è in questo stato a seguito della lettura un valore pari a 0 in memoria nello stato `STATE_ZERO_WORD_CHECK_AND_WRITE`. Viene scritto in RAM un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso). Si torna quindi in `STATE_ACTIVE`.
 
 === Segnali
 
