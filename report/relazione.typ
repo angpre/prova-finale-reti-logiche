@@ -382,15 +382,11 @@ Il componente è stato sottoposto a testbench scritti a mano per verificare il c
 
 === Testbench fornito ed esempi da specifica
 // i. test bench 1 (cosa fa e perché lo fa e cosa verifica; per esempio controlla una condizione limite)
-Il primo testbench ad essere stato provato è quello presente nei materiali per il progetto, funziona correttamente e rispetta i vincoli di clock.
-
-Inoltre, sono stati scritti test per controllare che il componente funzioni correttamente anche con tutti gli altri esempi forniti nella specifica.
+Il primo testbench ad essere stato provato è quello presente nei materiali per il progetto, funziona correttamente e rispetta i vincoli di clock. Inoltre, sono stati scritti test per controllare che il componente funzioni correttamente anche con tutti gli altri esempi forniti nella specifica.
 
 === Start multipli
 // ii. test bench 2 (....)
-Questo testbench è stato scritto per verificare il corretto funzionamento del componente in esecuzioni successive senza reset intermedi.
-
-Ciò ha permesso di controllare che i segnali interni vengano correttamente ripristinati quando inizia una nuova esecuzione (`i_start` pari a 1).
+Questo testbench è stato scritto per verificare il corretto funzionamento del componente in esecuzioni successive senza reset intermedi. Ciò ha permesso di controllare che i segnali interni vengano correttamente ripristinati quando inizia una nuova esecuzione.
 
 === Dato iniziale nullo
 // iii.
