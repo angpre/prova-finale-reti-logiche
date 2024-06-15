@@ -371,6 +371,8 @@ Notiamo che il componente usa:
 
 La percentuale di occupazione degli elementi disponibili è molto bassa: la logica implementata è molto semplice e non necessita di ampi spazi di memoria o complesse operazioni.
 
+Un altro dato rilevante è la durata del percorso critico, inferiore ai *5 ns*. Il componente può quindi lavorare a periodi di clock inferiori rispetto ai 20 ns con cui è stato testato.
+
 == Simulazioni
 
 // b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine è mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
