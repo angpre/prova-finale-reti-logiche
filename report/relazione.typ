@@ -94,7 +94,7 @@ Il componente realizzato elabora una sequenza di dati presenti in una memoria RA
   image("project_reti_logiche.svg")
 )
 
-Un esempio di possibile applicazione è la correzione di letture di sensori. Le letture assenti sono spesso segnalate memorizzando il valore $0$ in memoria.
+Un esempio di possibile applicazione è la correzione di letture di sensori. In molti casi, infatti, i sensori memorizzano valori assenti o non validi con il valore $0$. Il componente potrebbe porsi come interpolatore di questi dati, a cui associa però una certa affidabilità (credibilità).
 
 Nei paragrafi successivi è fornita sia una descrizione dei segnali necessari per il corretto funzionamento, sia una descrizione in maggior dettaglio del componente stesso.
 
@@ -124,8 +124,8 @@ table(
   [Enable],[`en`],[`o_mem_en`],[1 bit],
   [Write enable],[`we`],[`o_mem_we`],[1 bit],
   [Address],[`addr`],[`o_mem_addr`],[16 bit],
-  [Data in],[`di`],[`i_mem_data`],[8 bit],
-  [Data out],[`do`],[`o_mem_data`],[8 bit],
+  [Data in],[`di`],[`o_mem_data`],[8 bit],
+  [Data out],[`do`],[`i_mem_data`],[8 bit],
 ))
 
 Bisogna ricordare, infine, che RAM e componente devono condividere lo stesso segnale di clock.
