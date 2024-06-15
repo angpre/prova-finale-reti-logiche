@@ -390,7 +390,7 @@ Questo testbench è stato scritto per verificare il corretto funzionamento del c
 
 === Dato iniziale nullo
 // iii.
-Si è testato il corretto funzionamento in condizioni simili a quelle dell'esempio di funzionamento (@example).
+Si è testato il corretto funzionamento in condizioni simili a quelle dell'esempio di funzionamento fornito precedentemente.
 
 === Credibilità nulla
 Con questo testbench si è voluto testare che la credibilità, qualora sia stata decrementata fino a zero, rimanga pari a zero se i nuovi dati letti hanno valore nullo. 
