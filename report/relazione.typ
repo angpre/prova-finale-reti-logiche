@@ -213,7 +213,7 @@ Data la semplicità del componente, non si è ritenuto necessario dividerlo in p
 
 La macchina a stati finiti dell'architecture implementata è una macchina di Mealy.
 Internamente, le transizioni della FSM avvengono sul fronte di salita del clock.
-È composta da 6 stati, sono quindi necessari 3 Flip Flops per memorizzare lo stato corrente.
+È composta da 6 stati, sono quindi necessari 3 Flip Flop per memorizzare lo stato corrente.
 
 #figure(
   caption: "Rappresentazione ad alto livello della FSM implementata",
@@ -264,7 +264,7 @@ In questa sezione è presentata una descrizione delle funzioni svolte dal compon
 
 === Segnali
 
-La macchina a stati usa diversi segnali interni e per ognuno è presente un segnale con nome simile più l'aggiunta della parola _next_. La scelta progettuale di avere segnali "doppi" è stata fatta nell'ottica di avere solo Flip Flops come registri e nessun Latch.
+La macchina a stati usa diversi segnali interni e per ognuno è presente un segnale con nome simile più l'aggiunta della parola _next_. La scelta progettuale di avere segnali "doppi" è stata fatta nell'ottica di avere solo Flip Flop come registri e nessun Latch.
 
 Sono qui elencati i vari segnali con una brevissima descrizione:
 
@@ -355,8 +355,8 @@ table(
 ))
 
 Notiamo che il componente usa:
-- *51 Flip Flops* (0.02%), tutti e soli i previsti. Nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti: una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di flip flop, è quella di salvare $k$ e decrementarlo.
-- *78 Look-Up Tables* (0.06%)
+- *51 Flip Flop* (0.02%), tutti e soli i previsti. Nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti: una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di Flip Flop, è quella di salvare $k$ e decrementarlo.
+- *78 Look-Up Table* (0.06%)
 - *0 Latches*, risultato ottenuto grazie ad opportune scelte progettuali descritte precedentemente.
 
 La percentuale di occupazione degli elementi disponibili è molto bassa: la logica implementata è molto semplice e non necessita di ampi spazi di memoria o complesse operazioni.
@@ -396,10 +396,10 @@ Come nel testbench precedente, si è verificato il funzionamento a seguito di re
 
 = Conclusioni
 // 4. Conclusioni (mezza pagina max)
-Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta particolare attenzione a ridurre il numero di stati, senza sacrificare allo stesso tempo la leggibilità del codice.
+Il componente, oltre a rispettare la specifica, è stato implementato in modo efficiente. È stata posta particolare attenzione a ridurre il numero di stati e della durata delle computazioni, senza sacrificare allo stesso tempo la leggibilità del codice.
+
+Come già anticipato, un possibile miglioramento per ridurre l'uso di Flip Flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Table per svolgere l'operazione di decremento del $k$ (memorizzato al posto di `last_address`, utilizzando quindi 6 registri in meno). Questo permetterebbe anche di eliminare il segnale `end_address_next` a favore di un segnale `k_next`, risparmiando altri 6 registri.
+
+Un altro miglioramento che ridurrebbe ulteriormente il numero di registri è la memorizzazione della credibilità attraverso segnali di tipo `std_logic_vector(5 downto 0)` invece di queli a 8 bit utilizzati nell'implementazione attuale. Questa modifica permetterebbe di risparmiare registri.
 
 Oltre a funzionare nelle simulazioni Behavioral e Post-Synthesis Functional, il componente ha il comportamento richiesto anche quando viene testato in simulazioni Post-Synthesis Timing.
-
-Come già anticipato, un possibile miglioramento per ridurre l'uso di flip flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Tables per svolgere l'operazione di decremento del $k$ (memorizzato al posto di salvare last_address). Questo permetterebbe anche di eliminare il segnale `last_address_next`.
-
-Un ultimo miglioramento, che ridurrebbe il numero di registri ulteriormente, è salvare la credibilità utilizzando un segnale di tipo `std_logic_vector(5 downto 0)` invece del segnale a 8 bit utilizzato nell'implementazione corrente del componente. 
