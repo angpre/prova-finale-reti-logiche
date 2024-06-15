@@ -421,7 +421,7 @@ Oltre a funzionare nelle simulazioni Behavioral e Post-Synthesis Functional, il 
 
 Come già anticipato, un possibile miglioramento per ridurre l'uso di Flip Flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Table per svolgere l'operazione di decremento del $k$ (memorizzato al posto di `last_address`, utilizzando quindi 6 registri in meno). Questo permetterebbe anche di eliminare il segnale `end_address_next` a favore di un segnale `k_next`, risparmiando altri 6 registri.
 
-Un altro miglioramento che ridurrebbe il numero di registri è la memorizzazione della credibilità attraverso segnali di tipo `std_logic_vector(5 downto 0)` invece di queli a 8 bit utilizzati nell'implementazione attuale. Questa modifica permetterebbe di ridurre ulteriormente l'uso di registri.
+Un altro miglioramento è la memorizzazione della credibilità attraverso segnali di tipo `std_logic_vector(5 downto 0)` invece di quelli a 8 bit utilizzati nell'implementazione attuale. Questa modifica permetterebbe di ridurre ulteriormente l'uso di registri (quattro in meno).
 
 == Tooling
 
