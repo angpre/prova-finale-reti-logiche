@@ -175,7 +175,7 @@ Il termine della computazione, invece, sarà segnalato dal componente all'utiliz
 
 == Esempio di funzionamento <example>
 
-In questa sezione viene presentato il risultato di una computazione in termini di aggiornamento della memoria. È inoltre introdotto uno dei possibili edge-cases: l'inizio di una sequenza con dato zero.
+In questa sezione viene presentato il risultato di una computazione in termini di aggiornamento della memoria. È inoltre introdotto uno dei possibili edge-case: l'inizio di una sequenza con dato zero.
 
 Siano dati in ingresso `i_k`$=37$, `i_add`$=1158$ e  sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono evidenziati in grassetto)
 
