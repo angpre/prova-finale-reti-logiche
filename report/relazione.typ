@@ -100,7 +100,7 @@ Nei paragrafi successivi è fornita sia una descrizione dei segnali necessari pe
 
 == Collegamento a memoria RAM
 
-Il componente deve essere collegato a una memoria RAM che ha interfaccia
+Il componente deve essere collegato a una memoria RAM che ha la seguente interfaccia:
 ```
 entity ram is
     port
@@ -114,8 +114,9 @@ entity ram is
     );
 end ram;
 ```
-Sono specificate, nella tabella seguente, le corrispondenze tra segnali della memoria RAM e del componente
+Sono specificate, nella tabella seguente, le corrispondenze tra segnali della memoria RAM e del componente.
 
+//TODO
 #align(center,
 table(
   columns: 4,
@@ -146,7 +147,7 @@ Il termine della computazione, invece, sarà segnalato dal componente all'utiliz
 
 1. *Inizializzazione*:\ Sono forniti in input l'indirizzo iniziale, il numero di parole da processare e il segnale di start. Questa fase deve seguire un reset asincrono o la corretta terminazione di un'esecuzione precedente.
 
-2. *Aggiornamento*: \ Il modulo processa i dati in memoria, aggiornandoli e associando loro un valore di credibilità, come descritto in dettaglio dal seguente pseudocodice
+2. *Aggiornamento*: \ Il modulo processa i dati in memoria, aggiornandoli e associando loro un valore di credibilità, come descritto in dettaglio dal seguente pseudocodice:
 #pad(
   left: 2em,
   pseudocode(
@@ -171,13 +172,13 @@ Il termine della computazione, invece, sarà segnalato dal componente all'utiliz
   [*end*], no-number,
 )
 )
-3. *Terminazione*: \ Il componente segnala la fine dell'esecuzione ponendo il segnale `o_done` alto e rimanendo in attesa di osservare che il segnale `i_start` diventi $0$. Infine, il segnale `o_done` viene posto a $0$ e la computazione è da considerarsi terminata.
+3. *Terminazione*: \ Il componente segnala la fine dell'esecuzione ponendo il segnale `o_done` alto e rimanendo in attesa di osservare che il segnale `i_start` si abbassi. Infine, il segnale `o_done` viene posto a $0$ e la computazione è da considerarsi terminata.
 
 == Esempio di funzionamento <example>
 
 In questa sezione viene presentato il risultato di una computazione in termini di aggiornamento della memoria. È inoltre introdotto uno dei possibili edge-case: l'inizio di una sequenza con dato zero.
 
-Siano dati in ingresso `i_k`$=37$, `i_add`$=1158$ e  sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono evidenziati in grassetto)
+Siano dati in ingresso `i_k`$=37$, `i_add`$=1158$ e  sia la situazione iniziale e finale della memoria RAM quella rappresentata in figura (i dati memorizzati sono evidenziati in grassetto).
 
 #grid(
   columns: (1fr, 0.1fr, 1fr),
@@ -186,21 +187,21 @@ Siano dati in ingresso `i_k`$=37$, `i_add`$=1158$ e  sia la situazione iniziale 
   [
     Il primo dato letto ha valore zero. Non avendo letto alcun dato valido precedentemente, il valore rimane inalterato e la credibilità assegnata sarà $0$.
 
-    Il dato successivo è $13$, essendo non nullo riceve credibilità massima ($31$) e dato e credibilità vengono memorizzati come ultimi validi.
+    Il dato successivo è $13$, essendo non nullo riceve credibilità massima ($31$) e sia dato che credibilità vengono memorizzati come ultimi validi.
 
-    Segue una serie di dati nulli. Avendo salvato $13$ come ultimo dato valido, vengono sovrascritti con un valore diverso da 0 e viene associato ad ognuno di loro credibilità decrementata rispetto al precedente.
+    Segue una serie di dati nulli. Avendo salvato $13$ come ultimo dato valido, vengono sovrascritti e viene associato ad ognuno di loro credibilità decrementata rispetto al precedente.
 
     Quando la credibilità è stata già decrementata a $0$, se il dato nella cella successiva è nullo riceverà credibilità nulla, non potendola decrementare ulteriormente.
 
-    Dopo, è presente un dato diverso da zero, $111$, che riceve quindi credibilità $31$. Il dato successivo è invece pari a $0$ e quindi diventa $111$ e riceve credibilità decrementata ($30$) rispetto all'ultima memorizzata.
+    Successivamente è presente un dato diverso da zero, $111$, che riceve quindi credibilità $31$. Il dato che segue è invece pari a $0$ e quindi diventa $111$ e riceve credibilità decrementata ($30$) rispetto all'ultima memorizzata.
   ]
 )
 
 == Osservazioni
 
-Si noti che, nonostante le porzioni di memoria che ospitano la credibilità abbiano valore $0$ (sia in questo esempio sia in tutti i test forniti con la specifica), non si tratta del caso generale.
+Si noti che, nonostante le porzioni di memoria che ospitano la credibilità abbiano valore nullo (sia in questo esempio sia in tutti i test forniti con la specifica), non si tratta del caso generale.
 
-È quindi necessario, qualora non si abbia la certezza che sia già presente uno zero, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a $0$ stesso.
+È quindi necessario, qualora non si abbia la certezza che sia già presente uno zero, sovrascrivere il valore di credibilità anche se il valore da assegnare è pari a zero stesso.
 
 La lettura della generica cella di memoria che ospiterà la credibilità al fine di verificare che abbia valore nullo, seppur possibile, è un'operazione più costosa (un ciclo di clock in più) rispetto alla semplice sovrascrittura.
 
@@ -268,7 +269,7 @@ In questa sezione è presentata una descrizione delle funzioni svolte dal compon
   Il dato è finalmente disponibile: se è uguale a 0 bisogna sovrascriverlo (comunicandolo opportunamente alla RAM) con l'ultimo dato diverso da 0 e spostarsi nello stato `STATE_WRITE_DECREMENTED_CRED`; altrimenti, all'indirizzo successivo della RAM viene salvato il valore massimo di credibilità (31), tornando poi nello stato `STATE_ACTIVE`.
 
 - *`STATE_WRITE_DECREMENTED_CRED`* \
-  Si è in questo stato a seguito della lettura un valore pari a 0 in memoria nello stato `STATE_ZERO_WORD_CHECK_AND_WRITE`. Viene scritto in RAM un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso). Si torna quindi in `STATE_ACTIVE`.
+  Si arriva in questo stato a seguito della lettura di un valore pari a 0 in memoria nello stato `STATE_ZERO_WORD_CHECK_AND_WRITE`. Viene scritto in RAM un valore di credibilità decrementato rispetto al precedente (o 0 se l'ultima credibilità era già pari a 0 stesso). Si torna quindi in `STATE_ACTIVE`.
 
 === Segnali
 
@@ -302,7 +303,7 @@ Sono state inoltre dichiarate costanti per evitare ripetizioni ed essere più es
 
 === Processi
 
-L'architecture della FSM contiene due processi
+L'architecture della FSM contiene due processi, descritti in questo paragrafo.
 
 ==== Reset asincrono e clock
 
@@ -366,8 +367,8 @@ table(
 
 Notiamo che il componente usa:
 - *78 Look-Up Table* (0.06%)
-- *51 Flip Flop* (0.02%), tutti e soli i previsti. Nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti: una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di Flip Flop, è quella di salvare $k$ e decrementarlo.
-- *0 Latches*, risultato ottenuto grazie ad opportune scelte progettuali descritte precedentemente.
+- *51 Flip Flop* (0.02%), tutti e soli i previsti; nell'implementazione del componente viene salvato l'indirizzo di fine per controllare se ci sono indirizzi rimanenti. Una scelta alternativa, che avrebbe permesso di ridurre ulteriormente il numero di Flip Flop, è quella di salvare $k$ e decrementarlo.
+- *0 Latch*, risultato ottenuto grazie ad opportune scelte progettuali descritte precedentemente.
 
 La percentuale di occupazione degli elementi disponibili è molto bassa: la logica implementata è molto semplice e non necessita di ampi spazi di memoria o complesse operazioni.
 
@@ -377,9 +378,7 @@ Un altro dato rilevante è la durata del percorso critico, inferiore ai *5 ns*. 
 
 // b. Simulazioni: L'obiettivo non é solo riportare i risultati ottenuti attraverso la simulazione test bench forniti dai docenti, ma anche una analisi personale e una identificazione dei casi particolari; il fine è mostrare in modo convincente e più completo possibile, che il problema é stato esaminato a fondo e che, quanto sviluppato, soddisfa completamente i requisiti.
 
-Il componente è stato sottoposto a testbech scritti a mano per verificare il comportamento in presenza di diversi edge-case e a testbench generati automaticamente per controllare il corretto funzionamento su input prevedibili ma di lunghezza molto maggiore, al fine di fare benchmarks sulla velocità di esecuzione.
-
-Sono qui descritti i primi in dettaglio.
+Il componente è stato sottoposto a testbench scritti a mano per verificare il comportamento in presenza di diversi edge-case e a testbench generati automaticamente per controllare il corretto funzionamento su input prevedibili ma di lunghezza molto maggiore, al fine di fare benchmarks sulla velocità di esecuzione. In seguito, sono descritti i primi in maggior dettaglio.
 
 === Testbench fornito ed esempi da specifica
 // i. test bench 1 (cosa fa e perché lo fa e cosa verifica; per esempio controlla una condizione limite)
@@ -421,7 +420,7 @@ Oltre a funzionare nelle simulazioni Behavioral e Post-Synthesis Functional, il 
 
 Come già anticipato, un possibile miglioramento per ridurre l'uso di Flip Flop è quello di cambiare la verifica di fine della computazione, cambiamento che però andrebbe ad aumentare l'uso di Look-up Table per svolgere l'operazione di decremento del $k$ (memorizzato al posto di `last_address`, utilizzando quindi 6 registri in meno). Questo permetterebbe anche di eliminare il segnale `end_address_next` a favore di un segnale `k_next`, risparmiando altri 6 registri.
 
-Un altro miglioramento è la memorizzazione della credibilità attraverso segnali di tipo `std_logic_vector(5 downto 0)` invece di quelli a 8 bit utilizzati nell'implementazione attuale. Questa modifica permetterebbe di ridurre ulteriormente l'uso di registri (quattro in meno).
+Un altro miglioramento è la memorizzazione della credibilità attraverso segnali di tipo `std_logic_vector(4 downto 0)` invece di quelli a 8 bit utilizzati nell'implementazione attuale. Questa modifica permetterebbe di ridurre ulteriormente l'uso di registri (sei in meno, considerando anche il segnale _next_).
 
 == Tooling
 
